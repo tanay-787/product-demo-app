@@ -9,7 +9,7 @@ const LandingPage: React.FC = () => {
 
   const handleGetStarted = () => {
     if(user){
-      navigate('/projects');
+      navigate('/dashboard');
     }else {
       navigate('/handler/sign')
     }

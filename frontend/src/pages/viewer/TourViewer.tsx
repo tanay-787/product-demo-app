@@ -164,7 +164,7 @@ const TourViewer: React.FC = () => {
           <div className="mt-8 text-center p-4 border border-border rounded-lg bg-background">
             <p className="text-muted-foreground mb-4">Want to create your own interactive tours?</p>
             <div className="flex justify-center space-x-4">
-              <Link to="/projects">
+              <Link to="/dashboard">
                 <Button>Go to Dashboard</Button>
               </Link>
               <Link to="/editor">

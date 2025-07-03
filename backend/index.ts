@@ -1,57 +1,38 @@
 import express from "express"
 import cors from "cors"
-import helmet from "helmet"
-import dotenv from "dotenv"
 import { authMiddleware } from "./middleware/auth"
 import toursRouter from "./routes/tours"
 import publicToursRouter from "./routes/publicTours"
 import analyticsRouter from "./routes/analytics"
-import insightsRouter from './routes/insights';
-dotenv.config()
+import insightsRouter from "./routes/insights"
 
 const app = express()
 const PORT = process.env.PORT || 3000
 
 // Middleware
-app.use(helmet())
 app.use(cors())
 app.use(express.json())
 
-// Health check endpoint
-app.get("/health", (req, res) => {
+// Routes
+app.use("/api/tours", authMiddleware, toursRouter)
+app.use("/api/view", publicToursRouter) // Public routes for viewing tours
+app.use("/api/analytics", analyticsRouter)
+app.use("/api/insights", authMiddleware, insightsRouter)
+
+// Health check
+app.get("/api/health", (req, res) => {
   res.json({ status: "OK", timestamp: new Date().toISOString() })
 })
-
-// Public routes
-
-
-// Mock Analytics endpoint
-app.post("/api/analytics", (req, res) => {
-  const { event, tourId, stepIndex, timestamp } = req.body;
-  console.log(`[ANALYTICS EVENT] Type: ${event}, Tour ID: ${tourId}, Step: ${stepIndex}, Time: ${timestamp}`);
-  res.status(200).json({ message: "Analytics event received" });
-});
-
-app.use("/api/tours", authMiddleware, toursRouter)
-app.use("/api/public/tours", publicToursRouter)
-app.use("/api/analytics", authMiddleware, analyticsRouter)
-app.use("/api/insights", authMiddleware, insightsRouter)
 
 // Error handling middleware
 app.use((err: any, req: express.Request, res: express.Response, next: express.NextFunction) => {
   console.error("Error:", err)
-  res.status(err.status || 500).json({
-    error: err.message || "Internal Server Error",
-    ...(process.env.NODE_ENV === "development" && { stack: err.stack }),
+  res.status(500).json({
+    error: "Internal server error",
+    message: process.env.NODE_ENV === "development" ? err.message : "Something went wrong",
   })
 })
 
-// 404 handler
-app.use("*", (req, res) => {
-  res.status(404).json({ error: "Route not found" })
-})
-
 app.listen(PORT, () => {
-  console.log(`🚀 Server running on port ${PORT}`)
-  console.log(`📊 Health check: http://localhost:${PORT}/health`)
+  console.log(`Server running on port ${PORT}`)
 })

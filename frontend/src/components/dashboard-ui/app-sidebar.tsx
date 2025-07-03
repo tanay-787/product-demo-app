@@ -18,7 +18,8 @@ import {
   ChartNoAxesGantt,
   LayoutDashboard,
   ChartColumn,
-  Users
+  Users,
+  Folders
 } from "lucide-react"
 
 import { NavMain } from '@/components/dashboard-ui/nav-main'
@@ -36,14 +37,20 @@ import {
 const data = {
   navMain: [
     {
-      title: "Tours",
-      url: "/:uid/tours",
+      title: "Overview",
+      url: "/dashboard/overview",
       icon: ChartNoAxesGantt,
       isActive: true,
     },
     {
+      title: "Tours",
+      url: "/dashboard/tours",
+      icon: Folders,
+      isActive: true,
+    },
+    {
       title: "Insights",
-      url: "/projects/insights",
+      url: "/dashboard/insights",
       icon: ChartColumn,
     },
     {
@@ -80,7 +87,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
       <SidebarHeader>
         <SidebarMenu>
           <SidebarMenuItem>
-            <SidebarMenuButton disabled size="lg" asChild>
+            <SidebarMenuButton isActive size="lg" asChild>
               <div>
                 <div className="flex aspect-square size-8 items-center justify-center rounded-lg bg-sidebar-primary text-sidebar-primary-foreground">
                   <Command className="size-4" />
