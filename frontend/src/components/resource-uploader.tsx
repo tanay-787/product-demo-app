@@ -33,8 +33,8 @@ import {
 } from "@/components/ui/file-list"
 import { Upload, Video, Square, ImageIcon, Trash2 } from "lucide-react"
 import { cn } from "@/lib/utils"
-import { useUser } from "@stackframe/react" // Import useUser
-import api from "@/lib/api" // Import api
+import { useUser } from "@stackframe/react" 
+import api from "@/lib/api" 
 
 interface ResourceUploaderProps {
   onResourceUpload: (url: string | null, type: "image" | "video" | null) => void
@@ -60,7 +60,6 @@ export default function ResourceUploader({
   const recordingIntervalRef = useRef<NodeJS.Timeout | null>(null)
   const videoPreviewRef = useRef<HTMLVideoElement | null>(null)
 
-  // Reset internal state when dialog closes or a new resource is selected externally
   useEffect(() => {
     if (!open) {
       setFiles([])
@@ -97,8 +96,8 @@ export default function ResourceUploader({
       formData.append("timestamp", signatureData.timestamp.toString())
       formData.append("signature", signatureData.signature)
 
-      // Replace with your Cloudinary Cloud Name (e.g., from .env.local or fetched from backend)
-      const CLOUDINARY_CLOUD_NAME = import.meta.env.VITE_CLOUDINARY_CLOUD_NAME; // Assuming you set this in your .env.local
+     
+      const CLOUDINARY_CLOUD_NAME = import.meta.env.VITE_CLOUDINARY_CLOUD_NAME; 
 
       if (!CLOUDINARY_CLOUD_NAME) {
         console.error("Cloudinary Cloud Name is not configured.")
@@ -148,7 +147,7 @@ export default function ResourceUploader({
       if (acceptedFiles.length > 0) {
         const file = acceptedFiles[0]
         setFiles([file])
-        setRecordedVideoUrl(null) // Clear any recorded video
+        setRecordedVideoUrl(null)
 
         let uploadedUrl: string | null = null
         let uploadedType: "image" | "video" | null = null
@@ -163,7 +162,7 @@ export default function ResourceUploader({
 
         if (uploadedUrl) {
           onResourceUpload(uploadedUrl, uploadedType)
-          // setOpen(false) // Temporarily commented out for debugging
+          setOpen(false)
         }
       }
     },
@@ -467,9 +466,9 @@ export default function ResourceUploader({
         </div>
 
         {/* Add a close button for debugging purposes */}
-        <div className="mt-4 flex justify-end">
+        {/* <div className="mt-4 flex justify-end">
           <Button onClick={() => setOpen(false)}>Close Debug Dialog</Button>
-        </div>
+        </div> */}
 
       </DialogContent>
     </Dialog>

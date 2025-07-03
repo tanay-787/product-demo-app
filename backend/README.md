@@ -1,110 +1,201 @@
-# Express + Neon Backend with TypeScript
+# Tourify Backend
 
-A robust Express.js backend application using Neon Postgres database with Drizzle ORM and Neon Authorize for authentication.
+This repository contains the backend for Tourify, a product tour creation and viewing application. It provides a robust API for managing tours, their steps, and annotations, along with analytics, insights, and media handling.
 
 ## Features
 
-- 🚀 Express.js with TypeScript
-- 🗄️ Neon Postgres database with Drizzle ORM
-- 🔐 Neon Authorize for JWT-based authentication
-- ✅ Input validation with Zod
-- 🔒 Secure middleware (Helmet, CORS)
-- 📝 Comprehensive error handling
+*   **Tour Management:** Create, read, update, and delete product tours and their associated steps and annotations.
+*   **Public Tour Viewing:** Allows public access to published tours via a unique shareable URL.
+*   **Analytics:** Track tour views and user interactions.
+*   **Insights:** Provide data-driven insights on tour performance.
+*   **Media Management:** Handle image and video uploads for tour steps.
+*   **Authentication & Authorization:** Secure API endpoints using Neon Authorize (JWT-based authentication).
+*   **Database Integration:** Utilizes Neon Postgres with Drizzle ORM for efficient data management.
+*   **Input Validation:** Ensures data integrity with Zod schema validation.
+*   **Error Handling:** Comprehensive error handling for robust API responses.
 
-## Setup
+## Technologies Used
 
-1. **Install dependencies:**
-   ```bash
-   npm install
-   ```
+*   **Node.js & Express.js:** The core web framework for building RESTful APIs.
+*   **TypeScript:** For type-safe and maintainable code.
+*   **Neon Postgres:** A serverless PostgreSQL database.
+*   **Drizzle ORM:** A modern TypeScript ORM for relational databases.
+*   **Neon Authorize:** For JWT-based user authentication and authorization.
+*   **Zod:** A TypeScript-first schema declaration and validation library.
+*   **CORS:** Middleware for enabling Cross-Origin Resource Sharing.
+*   **Multer:** Middleware for handling `multipart/form-data`, primarily used for file uploads.
 
-2. **Environment setup:**
-   ```bash
-   cp .env.example .env
-   ```
-   Fill in your Neon database URLs and JWKS URL.
+## Setup and Installation
 
-3. **Generate and run migrations:**
-   ```bash
-   npm run db:generate
-   npm run db:migrate
-   ```
+To set up the backend locally, follow these steps:
 
-4. **Seed the database (optional):**
-   ```bash
-   npm run db:seed
-   ```
+1.  **Navigate to the backend directory:**
+    ```bash
+    cd backend
+    ```
 
-5. **Start development server:**
-   ```bash
-   npm run dev
-   ```
+2.  **Install dependencies:**
+    ```bash
+    pnpm install
+    ```
+    (If you don't have pnpm, install it using `npm install -g pnpm`)
+
+3.  **Environment Variables:**
+    Create a `.env` file in the `backend/` directory based on `.env.example`:
+    ```
+    DATABASE_URL="your_neon_postgres_database_url"
+    JWKS_URL="your_neon_authorize_jwks_url"
+    # Optional: Set a port if you don't want to use the default 3000
+    # PORT=3001
+    ```
+    *   `DATABASE_URL`: Your connection string for the Neon PostgreSQL database.
+    *   `JWKS_URL`: The JSON Web Key Set (JWKS) URL provided by Neon Authorize for verifying JWTs.
+
+4.  **Database Migrations:**
+    Generate and apply database migrations to set up your schema:
+    ```bash
+    pnpm run db:generate
+    pnpm run db:migrate
+    ```
+
+5.  **Start the Development Server:**
+    ```bash
+    pnpm run dev
+    ```
+    The server will typically run on `http://localhost:3000`.
 
 ## API Endpoints
 
-### Authentication
-All API endpoints require a valid JWT token in the Authorization header:
-```
-Authorization: Bearer <your-jwt-token>
-```
+All authenticated endpoints require a valid JWT (JSON Web Token) provided in the `Authorization` header as a Bearer token:
 
-### User Endpoints
+`Authorization: Bearer <your_jwt_token>`
 
-#### POST /api/users/:id
-Get a specific user's information by their ID.
+### 1. Health Check
 
-**Request:**
-```bash
-curl -X POST http://localhost:3000/api/users/123e4567-e89b-12d3-a456-426614174000 \
-  -H "Authorization: Bearer <your-jwt-token>"
-```
+*   `GET /api/health`
+    *   **Description:** Checks the health of the API.
+    *   **Authentication:** None
+    *   **Response:**
+        ```json
+        { "status": "OK", "timestamp": "2024-01-01T12:00:00.000Z" }
+        ```
 
-**Response:**
-```json
-{
-  "success": true,
-  "data": {
-    "id": "123e4567-e89b-12d3-a456-426614174000",
-    "email": "john.doe@example.com",
-    "name": "John Doe",
-    "avatar": "https://avatar.vercel.sh/john",
-    "isActive": true,
-    "createdAt": "2024-01-01T00:00:00.000Z",
-    "updatedAt": "2024-01-01T00:00:00.000Z",
-    "profile": {
-      "bio": "Full-stack developer passionate about TypeScript and React",
-      "location": "San Francisco, CA",
-      "website": "https://johndoe.dev",
-      "company": "Tech Corp",
-      "jobTitle": "Senior Developer"
-    }
-  }
-}
-```
+### 2. Tour Management (`/api/tours`)
 
-#### GET /api/users/me
-Get the current authenticated user's information.
+These endpoints are protected and require authentication.
 
-## Security
+*   `GET /api/tours`
+    *   **Description:** Retrieve all tours belonging to the authenticated user.
+*   `GET /api/tours/:id`
+    *   **Description:** Retrieve a single tour by ID, including its steps and annotations.
+*   `POST /api/tours`
+    *   **Description:** Create a new tour.
+    *   **Request Body Example:**
+        ```json
+        {
+          "title": "My New Product Tour",
+          "description": "An exciting tour to onboard users."
+        }
+        ```
+*   `PATCH /api/tours/:id`
+    *   **Description:** Update an existing tour's details or status.
+    *   **Request Body Example (to update status):**
+        ```json
+        {
+          "status": "published"
+        }
+        ```
+*   `DELETE /api/tours/:id`
+    *   **Description:** Delete a tour by ID.
 
-This application implements security at multiple levels:
+#### Tour Steps (`/api/tours/:tourId/steps`)
 
-1. **JWT Authentication:** All requests require valid JWT tokens
-2. **Input Validation:** Request validation using Zod schemas
-3. **Secure Headers:** Helmet middleware for security headers
-4. **CORS Protection:** Configurable CORS policies
+*   `POST /api/tours/:tourId/steps`
+    *   **Description:** Add a new step to a tour.
+*   `PATCH /api/tours/:tourId/steps/:stepId`
+    *   **Description:** Update an existing tour step.
+*   `DELETE /api/tours/:tourId/steps/:stepId`
+    *   **Description:** Delete a tour step.
+
+#### Tour Sharing (`/api/tours/:tourId/share`)
+
+*   `GET /api/tours/:tourId/share`
+    *   **Description:** Get sharing information for a tour (e.g., public share ID).
+*   `POST /api/tours/:tourId/share`
+    *   **Description:** Create or update sharing settings for a tour (e.g., make it public).
+    *   **Request Body Example:**
+        ```json
+        {
+          "isPublic": true
+        }
+        ```
+
+### 3. Public Tour Viewing (`/api/view`)
+
+These endpoints are public and do not require authentication.
+
+*   `GET /api/view/:id`
+    *   **Description:** Retrieve a published tour by its public ID. Returns tour details, steps, and annotations.
+
+### 4. Analytics (`/api/analytics`)
+
+*   `POST /api/analytics/event`
+    *   **Description:** Record an analytics event (e.g., tour view, step completion).
+    *   **Authentication:** Authenticated or public depending on event type.
+    *   **Request Body Example:**
+        ```json
+        {
+          "tourId": "some_tour_id",
+          "eventType": "tour_view",
+          "userId": "optional_user_id",
+          "data": { "platform": "web" }
+        }
+        ```
+
+### 5. Insights (`/api/insights`)
+
+These endpoints are protected and require authentication.
+
+*   `GET /api/insights/tours`
+    *   **Description:** Get aggregated insights across all user's tours.
+*   `GET /api/insights/tours/:id`
+    *   **Description:** Get detailed insights for a specific tour.
+
+### 6. Media (`/api/media`)
+
+These endpoints are protected and require authentication.
+
+*   `POST /api/media/upload`
+    *   **Description:** Upload image or video files for tour annotations.
+    *   **Content-Type:** `multipart/form-data`
+    *   **Request Body:** File upload (e.g., `image`, `video` fields)
+    *   **Response:** Returns the URL of the uploaded media.
 
 ## Database Schema
 
-The application uses two main tables:
-- `users`: Core user information
-- `user_profiles`: Extended user profile data
+The application uses the following main schema:
 
-## Development
+*   **`tours`**: Stores information about each product tour (e.g., `id`, `title`, `description`, `status`).
+*   **`tourSteps`**: Stores individual steps for each tour, linked by `tourId` (e.g., `id`, `stepOrder`, `imageUrl`, `videoUrl`, `description`).
+*   **`annotations`**: Stores interactive annotations for each tour step, linked by `stepId` (e.g., `id`, `type`, `x`, `y`, `width`, `height`, `content`).
+*   **`tourShares`**: Stores public sharing information for tours (e.g., `id`, `tourId`, `isPublic`).
+*   **`analyticsEvents`**: Records various user interactions and tour views.
 
-- `npm run dev` - Start development server with hot reload
-- `npm run build` - Build for production
-- `npm run start` - Start production server
-- `npm run db:generate` - Generate database migrations
-- `npm run db:migrate` - Run database migrations
-- `npm run db:seed` - Seed database with sample data
+Detailed schema definitions can be found in `backend/db/schema/product-tours.ts`.
+
+## Error Handling
+
+The backend includes a centralized error handling middleware to catch and process errors. In development mode, it provides detailed error messages, while in production, it provides generic messages for security.
+
+## Development Scripts
+
+*   `pnpm dev`: Starts the development server with `ts-node-dev` for hot-reloading.
+*   `pnpm build`: Compiles TypeScript to JavaScript for production deployment.
+*   `pnpm start`: Starts the compiled Node.js application (for production).
+*   `pnpm db:generate`: Generates Drizzle migrations based on schema changes.
+*   `pnpm db:migrate`: Runs pending Drizzle database migrations.
+*   `pnpm db:seed`: (If implemented) Seeds the database with sample data for development/testing.
+
+## Contributing
+
+Contributions are welcome! Please ensure you follow the existing code style and commit message guidelines. For major changes, please open an issue first to discuss what you would like to change.

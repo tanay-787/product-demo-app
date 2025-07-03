@@ -1,33 +1,67 @@
-# BackGen
+# Tourify Frontend
 
-#### Instantly generate modern backend boilerplates with your favorite stack, frameworks, and database. 
+Tourify is a product tour creation and viewing application. This repository contains the frontend part of the application, built with React and Vite.
 
-#### Choose a stack, define your data models and endpoints, and it generates a fully working backend, complete with validation, Docker, and deployment setup.
+## Features
 
-### TechStack
-* React + Vite
-* Shadcn/ui
-* Neon Serverless Postgres
-* Drizzle
-* Neon Auth
+*   **Product Tour Editor:** Create interactive product tours with annotations, images, and videos.
+*   **Tour Management:** View, edit, publish, and manage your product tours.
+*   **Public Tour Viewer:** Share published tours via a unique URL for public viewing.
+*   **User Authentication:** Secure access to tour creation and management features.
 
+## Technologies Used
 
+*   **React:** A JavaScript library for building user interfaces.
+*   **Vite:** A fast build tool that provides a lean and opinionated development experience for modern web projects.
+*   **Shadcn/ui:** A collection of reusable components built using Radix UI and Tailwind CSS.
+*   **TypeScript:** A superset of JavaScript that adds static types.
+*   **Tailwind CSS:** A utility-first CSS framework for rapidly building custom designs.
+*   **React Router DOM:** For client-side routing.
+*   **TanStack Query (React Query):** For data fetching, caching, and state management.
+*   **Motion/React (Framer Motion):** For animations.
 
-## Docs & References: 
+## Setup and Installation
 
-* [Neon with Express: Repo](https://github.com/neondatabase/examples/tree/main/with-express)
+To set up the frontend locally, follow these steps:
 
-* [Connect Express to Neon: Guide](https://neon.com/docs/guides/express#source-code)
+1.  **Navigate to the frontend directory:**
+    ```bash
+    cd frontend
+    ```
 
-* [Connect from Drizzle to Neon: Guide](https://neon.com/docs/guides/drizzle)
+2.  **Install dependencies:**
+    ```bash
+    pnpm install
+    ```
+    (If you don't have pnpm, install it using `npm install -g pnpm`)
 
-* [Neon Auth with React: Repo](https://github.com/neondatabase-labs/neon-auth-react-template)
+3.  **Start the development server:**
+    ```bash
+    pnpm dev
+    ```
+    The application will typically be available at `http://localhost:5173`.
 
-* [Neon Auth with Stripe: Repo](https://github.com/neondatabase-labs/neon-auth-stripe-demo)
+## Project Structure
 
+*   `src/`: Contains the main application source code.
+    *   `assets/`: Static assets like images.
+    *   `components/`: Reusable UI components.
+    *   `contexts/`: React context providers.
+    *   `hooks/`: Custom React hooks.
+    *   `lib/`: Utility functions and API configurations.
+    *   `pages/`: Top-level components representing different views/pages.
+        *   `dashboard/`: Components related to the dashboard.
+        *   `editor/`: Components for the tour editor.
+        *   `testing/`: Components for testing purposes.
+        *   `viewer/`: Components for public tour viewing.
+    *   `App.tsx`: Main application component.
+    *   `main.tsx`: Entry point of the React application.
+    *   `index.css`: Global styles.
 
+## API Integration
 
+The frontend communicates with the backend API. The API base URL is configured in `src/lib/api.ts`. During development, it's set to `/api`, expecting the backend to be served from the same origin or a proxy to handle requests starting with `/api`.
 
-Prompt:
+## Contributing
 
-Here' comes the tricky part, implementing this component is the most complicated part, since its dependant on the previous components majorly. For instance, whether the user has enabled zod or opted for framework specific validation? Whether the authentication is enabled or evrything is public? Also what authorization 
+Contributions are welcome! Please feel free to open issues or submit pull requests.
