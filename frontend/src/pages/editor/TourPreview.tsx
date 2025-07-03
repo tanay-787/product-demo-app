@@ -3,7 +3,7 @@ import Draggable, { type DraggableEventHandler } from 'react-draggable';
 import { XCircle } from 'lucide-react';
 
 interface Annotation {
-  id: string;
+  id?: string; // Made optional to match ProductTourEditor
   text: string;
   x: number;
   y: number;
@@ -78,19 +78,19 @@ const TourPreview: React.FC<TourPreviewProps> = ({
       )}
       {annotations.map((annotation) => (
         <Draggable
-          key={annotation.id}
+          key={annotation.id} // Use the potentially optional ID
           bounds="parent"
           onDrag={handleDrag}
           onStop={handleStop}
           defaultPosition={{ x: (annotation.x / 100) * (containerRef.current?.getBoundingClientRect().width || 0), y: (annotation.y / 100) * (containerRef.current?.getBoundingClientRect().height || 0) }}
         >
           <div
-            data-annotation-id={annotation.id} // Store ID for easy retrieval on drag stop
+            data-annotation-id={annotation.id} 
             className="absolute p-2 bg-blue-500 text-white text-sm rounded-md shadow-lg cursor-grab flex items-center whitespace-nowrap"
             style={{
               left: `${annotation.x}%`,
               top: `${annotation.y}%`,
-              transform: 'translate(-50%, -50%)', // Center the annotation on its coordinates
+              transform: 'translate(-50%, -50%)',
             }}
           >
             {annotation.text}
@@ -98,8 +98,10 @@ const TourPreview: React.FC<TourPreviewProps> = ({
               <XCircle
                 className="h-4 w-4 ml-2 cursor-pointer text-red-300 hover:text-red-100"
                 onClick={(e) => {
-                  e.stopPropagation(); // Prevent drag event from firing on delete click
-                  handleDeleteClick(annotation.id);
+                  e.stopPropagation();
+                  if (annotation.id) { // Ensure id exists before passing
+                    handleDeleteClick(annotation.id);
+                  }
                 }}
               />
             )}

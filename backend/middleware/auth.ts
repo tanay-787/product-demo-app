@@ -9,7 +9,7 @@ declare global {
         email?: string
         [key: string]: any
       }
-      authUserId?: string // Explicitly add authUserId for convenience
+      userId?: string // Explicitly add authUserId for convenience
       authToken?: string
       projectId?: string;
     }
@@ -18,13 +18,26 @@ declare global {
 
 export const authMiddleware = async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const authHeader = req.headers.authorization
+    // Corrected: Read 'x-stack-auth' header and parse its JSON content
+    const stackAuthHeader = req.headers['x-stack-auth'] as string;
 
-    if (!authHeader || !authHeader.startsWith("Bearer ")) {
-      return res.status(401).json({ error: "Missing or invalid authorization header" })
+    if (!stackAuthHeader) {
+      return res.status(401).json({ error: "Missing 'x-stack-auth' header" })
     }
 
-    const token = authHeader.substring(7)
+    let parsedAuth;
+    try {
+      parsedAuth = JSON.parse(stackAuthHeader);
+    } catch (parseError) {
+      console.error("Error parsing x-stack-auth header:", parseError);
+      return res.status(401).json({ error: "Invalid 'x-stack-auth' header format" });
+    }
+
+    const token = parsedAuth.accessToken; // Extract the accessToken from the parsed JSON
+
+    if (!token) {
+      return res.status(401).json({ error: "Access token not found in 'x-stack-auth' header" });
+    }
 
     if (!process.env.JWKS_URL) {
       return res.status(500).json({ error: "JWKS_URL not configured" })
@@ -43,7 +56,7 @@ export const authMiddleware = async (req: Request, res: Response, next: NextFunc
     }
 
     // Store the auth user ID directly for convenience
-    req.authUserId = payload.sub as string;
+    req.userId = payload.sub as string;
 
     // Store the full token for database authentication
     req.authToken = token

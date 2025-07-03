@@ -4,7 +4,9 @@ import { type TourStep, type Annotation } from '../editor/ProductTourEditor';
 import TourPreview from '../editor/TourPreview';
 import { Button } from '@/components/ui/button';
 import { motion, AnimatePresence } from 'motion/react';
-import { useUser } from '@stackframe/react'; // Import useUser
+import { useUser } from '@stackframe/react';
+import { useQuery } from '@tanstack/react-query';
+import api from '@/lib/api';
 
 interface TourData {
   id: string;
@@ -16,67 +18,51 @@ interface TourData {
 
 const TourViewer: React.FC = () => {
   const { tourId } = useParams<{ tourId: string }>();
-  const [tour, setTour] = useState<TourData | null>(null);
   const [currentStepIndex, setCurrentStepIndex] = useState<number>(0);
-  const [isLoading, setIsLoading] = useState<boolean>(true);
-  const [error, setError] = useState<string | null>(null);
-  const user = useUser(); // Get user session (null if not logged in)
+  const user = useUser(); // Get user object to access auth headers
 
-  // Function to send analytics events
   const trackEvent = useCallback(async (event: string, data: Record<string, any>) => {
-    if (!tourId) return; // Cannot track without a tourId
+    if (!tourId) return;
 
     try {
-      await fetch('/api/analytics', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          event,
-          tourId,
-          timestamp: new Date().toISOString(),
-          ...data,
-        }),
-      });
+      // Only send auth headers if the user is logged in
+      const authHeaders = user ? await user.getAuthHeaders() : {};
+
+      await api.post('/analytics', {
+        event,
+        tourId,
+        timestamp: new Date().toISOString(),
+        ...data,
+      }, { headers: authHeaders }); // Pass headers here
     } catch (e) {
       console.error('Failed to send analytics event:', e);
     }
-  }, [tourId]);
+  }, [tourId, user]); // Added user to dependency array
 
+  const { data: tour, isLoading, isError, error, isSuccess } = useQuery<TourData, Error>({
+    queryKey: ['publicTour', tourId],
+    queryFn: async () => {
+      if (!tourId) {
+        throw new Error("Tour ID is missing.");
+      }
+      // Public route, no auth headers needed for fetching the tour itself
+      const response = await api.get<TourData>(`/view/${tourId}`);
+      response.data.tourSteps.sort((a, b) => (a.stepOrder || 0) - (b.stepOrder || 0));
+      return response.data;
+    },
+    enabled: !!tourId,
+  });
+
+  // Handle tour viewed event using useEffect after successful query
   useEffect(() => {
-    if (tourId) {
-      const fetchTour = async () => {
-        setIsLoading(true);
-        setError(null);
-        try {
-          const response = await fetch(`/view/${tourId}`); // Fetch from public view endpoint
-          if (!response.ok) {
-            const errorData = await response.json();
-            throw new Error(errorData.error || `HTTP error! status: ${response.status}`);
-          }
-          const data: TourData = await response.json();
-          // Ensure steps are sorted by stepOrder for correct playback
-          data.tourSteps.sort((a, b) => (a.stepOrder || 0) - (b.stepOrder || 0));
-          setTour(data);
-
-          // Track tour viewed event
-          trackEvent('tour_viewed', { tourTitle: data.title });
-
-        } catch (e: any) {
-          console.error('Error fetching tour for viewer:', e);
-          setError(e.message);
-        } finally {
-          setIsLoading(false);
-        }
-      };
-      fetchTour();
+    if (isSuccess && tour) {
+      trackEvent('tour_viewed', { tourTitle: tour.title });
     }
-  }, [tourId, trackEvent]);
+  }, [isSuccess, tour, trackEvent]);
 
-  // Track step viewed event when currentStepIndex changes
+  // Track step viewed event when currentStepIndex changes, and tour data is available
   useEffect(() => {
-    if (tour && currentStepIndex !== -1) { // Only track if a tour is loaded and a step is selected
+    if (tour && currentStepIndex !== -1) { 
       trackEvent('step_viewed', { stepIndex: currentStepIndex, stepDescription: tour.tourSteps[currentStepIndex]?.description });
     }
   }, [currentStepIndex, tour, trackEvent]);
@@ -97,8 +83,8 @@ const TourViewer: React.FC = () => {
     return <div className="p-8 text-center text-xl">Loading tour...</div>;
   }
 
-  if (error) {
-    return <div className="p-8 text-center text-red-500">Error loading tour: {error}</div>;
+  if (isError) {
+    return <div className="p-8 text-center text-red-500">Error loading tour: {error?.message}</div>;
   }
 
   if (!tour) {
@@ -107,7 +93,6 @@ const TourViewer: React.FC = () => {
 
   const currentStep = tour.tourSteps[currentStepIndex];
 
-  // Define animation variants for slide transition
   const variants = {
     enter: (direction: number) => ({
       x: direction > 0 ? 1000 : -1000,
@@ -123,7 +108,6 @@ const TourViewer: React.FC = () => {
     })
   };
 
-  // State to determine animation direction
   const [direction, setDirection] = useState(0);
   const paginate = (newDirection: number) => {
     setDirection(newDirection);
@@ -139,7 +123,7 @@ const TourViewer: React.FC = () => {
         <div className="relative mb-6 overflow-hidden">
           <AnimatePresence initial={false} custom={direction}>
             <motion.div
-              key={currentStepIndex} // Key is crucial for AnimatePresence to detect changes
+              key={currentStepIndex}
               custom={direction}
               variants={variants}
               initial="enter"

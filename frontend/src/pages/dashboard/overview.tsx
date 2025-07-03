@@ -1,12 +1,12 @@
-import { useState, useEffect } from "react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Separator } from "@/components/ui/separator"
 import { BarChart3, Folder, Eye, TrendingUp, DraftingCompass } from "lucide-react"
-import { Input } from "@/components/ui/input"
-import { useUser } from "@stackframe/react"
-import TourList from './TourList';
 import { Link } from 'react-router-dom';
+import TourList from './TourList';
+import { useQuery } from '@tanstack/react-query';
+import api from '@/lib/api';
+import { useUser } from '@stackframe/react'; // Import useUser
 
 interface AnalyticsData {
   totalTours: number;
@@ -18,32 +18,21 @@ interface AnalyticsData {
 }
 
 export default function Overview() {
-  const user = useUser({ or: "redirect"})
-  const [analytics, setAnalytics] = useState<AnalyticsData | null>(null);
-  const [loadingAnalytics, setLoadingAnalytics] = useState<boolean>(true);
-  const [analyticsError, setAnalyticsError] = useState<string | null>(null);
+  const user = useUser({ or: "redirect"}); // Get user object for auth headers and redirection
 
-  useEffect(() => {
-    const fetchAnalytics = async () => {
-      setLoadingAnalytics(true);
-      setAnalyticsError(null);
-      try {
-        const response = await fetch('/api/analytics');
-        if (!response.ok) {
-          throw new Error(`HTTP error! status: ${response.status}`);
-        }
-        const data: AnalyticsData = await response.json();
-        setAnalytics(data);
-      } catch (e: any) {
-        console.error('Error fetching analytics:', e);
-        setAnalyticsError(e.message);
-      } finally {
-        setLoadingAnalytics(false);
+  // Use useQuery to fetch analytics data
+  const { data: analytics, isLoading, isError, error } = useQuery<AnalyticsData, Error>({
+    queryKey: ['analytics'],
+    queryFn: async () => {
+      if (!user) {
+        throw new Error("User not authenticated for analytics.");
       }
-    };
-
-    fetchAnalytics();
-  }, []);
+      const authHeaders = await user.getAuthHeaders();
+      const response = await api.get<AnalyticsData>('/analytics', { headers: authHeaders });
+      return response.data;
+    },
+    enabled: !!user, // Only run query if user is available
+  });
 
   return (
     <div className="flex-1 space-y-8 p-6">
@@ -67,10 +56,10 @@ export default function Overview() {
           <h2 className="text-xl font-semibold">Analytics Overview</h2>
         </div>
 
-        {loadingAnalytics ? (
+        {isLoading ? (
           <div className="text-center text-lg">Loading analytics...</div>
-        ) : analyticsError ? (
-          <div className="text-center text-red-500">Error: {analyticsError}</div>
+        ) : isError ? (
+          <div className="text-center text-red-500">Error: {error?.message}</div>
         ) : analytics ? (
           <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
             <Card className="metric-card">

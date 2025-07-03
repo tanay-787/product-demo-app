@@ -12,83 +12,147 @@ import { Button } from '@/components/ui/button';
 import { useSearchParams } from 'react-router-dom';
 import { Textarea } from '@/components/ui/textarea';
 import { motion, AnimatePresence } from 'motion/react';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import api from '@/lib/api';
 
 export interface Annotation {
-  id: string;
+  id?: string;
   text: string;
   x: number;
   y: number;
 }
 
 export interface TourStep {
-  id: string;
+  id?: string;
   imageUrl: string | null;
   description: string;
   annotations: Annotation[];
   stepOrder?: number;
 }
 
+interface TourData {
+  id: string;
+  title: string;
+  description?: string;
+  status: 'draft' | 'published' | 'private';
+  tourSteps: TourStep[];
+}
+
 const ProductTourEditor: React.FC = () => {
   const user = useUser({ or: "redirect" });
   const [searchParams] = useSearchParams();
   const urlTourId = searchParams.get('tourId');
+  const queryClient = useQueryClient();
 
   const [tourId, setTourId] = useState<string | null>(null);
   const [tourTitle, setTourTitle] = useState<string>('');
   const [tourDescription, setTourDescription] = useState<string>('');
   const [tourSteps, setTourSteps] = useState<TourStep[]>([]);
   const [selectedStepIndex, setSelectedStepIndex] = useState<number>(0);
-  const [isSaving, setIsSaving] = useState<boolean>(false);
-  const [saveError, setSaveError] = useState<string | null>(null);
-  const [saveSuccess, setSaveSuccess] = useState<boolean>(false);
-  const [isLoadingTour, setIsLoadingTour] = useState<boolean>(false);
-  const [loadTourError, setLoadTourError] = useState<string | null>(null);
   const [direction, setDirection] = useState(0);
-  const [tourCurrentStatus, setTourCurrentStatus] = useState<'draft' | 'published' | 'private'>('draft'); // New state for tour status
+  const [tourCurrentStatus, setTourCurrentStatus] = useState<'draft' | 'published' | 'private'>('draft');
+
+  const { data: fetchedTour, isLoading: isLoadingTour, isError: isLoadTourError, error: loadTourError, isSuccess: isLoadTourSuccess } = useQuery<TourData, Error>({
+    queryKey: ['tour', urlTourId],
+    queryFn: async () => {
+      if (!urlTourId) {
+        throw new Error("Tour ID is missing.");
+      }
+      if (!user) {
+        throw new Error("User not authenticated.");
+      }
+      const authHeaders = await user.getAuthHeaders();
+      const response = await api.get<TourData>(`/tours/${urlTourId}`, { headers: authHeaders });
+      return response.data;
+    },
+    enabled: !!urlTourId && !!user, // Only fetch if urlTourId and user are available
+  });
 
   useEffect(() => {
-    if (urlTourId) {
-      const fetchTour = async () => {
-        setIsLoadingTour(true);
-        setLoadTourError(null);
-        try {
-          const response = await fetch(`/api/tours/${urlTourId}`);
-          if (!response.ok) {
-            const errorData = await response.json();
-            throw new Error(errorData.error || `HTTP error! status: ${response.status}`);
-          }
-          const data = await response.json();
-          
-          setTourId(data.id);
-          setTourTitle(data.title);
-          setTourDescription(data.description || '');
-          const sortedSteps = data.tourSteps.sort((a: TourStep, b: TourStep) => (a.stepOrder || 0) - (b.stepOrder || 0));
-          setTourSteps(sortedSteps.map((step: TourStep) => ({ ...step, id: step.id || Date.now().toString() })));
-          setSelectedStepIndex(0);
-          setTourCurrentStatus(data.status); // Set tour status from fetched data
-        } catch (e: any) {
-          console.error('Error loading tour:', e);
-          setLoadTourError(e.message);
-        } finally {
-          setIsLoadingTour(false);
-        }
-      };
-      fetchTour();
-    } else {
+    if (isLoadTourSuccess && fetchedTour) {
+      setTourId(fetchedTour.id);
+      setTourTitle(fetchedTour.title);
+      setTourDescription(fetchedTour.description || '');
+      const sortedSteps = fetchedTour.tourSteps.sort((a, b) => (a.stepOrder || 0) - (b.stepOrder || 0));
+      setTourSteps(sortedSteps.map((step) => ({ ...step, id: step.id || Date.now().toString() })));
+      setSelectedStepIndex(0);
+      setTourCurrentStatus(fetchedTour.status);
+    }
+  }, [isLoadTourSuccess, fetchedTour]);
+
+  useEffect(() => {
+    if (!urlTourId && tourSteps.length === 0 && !isLoadingTour && !isLoadTourError) {
+      handleAddStep();
+    } else if (urlTourId && !isLoadingTour && isLoadTourError && !tourId) {
       if (tourSteps.length === 0) {
         handleAddStep();
       }
-      setTourCurrentStatus('draft'); // Default to draft for new tours
     }
-  }, [urlTourId]);
-
-  useEffect(() => {
-    if (!urlTourId && tourSteps.length === 0) {
-      handleAddStep();
-    }
-  }, [urlTourId, tourSteps]);
+  }, [urlTourId, tourSteps.length, isLoadingTour, isLoadTourError, tourId]);
 
   const currentStep = tourSteps[selectedStepIndex];
+
+  const saveTourMutation = useMutation<TourData, Error, { title: string, description: string, status: string, steps: TourStep[] }>({
+    mutationFn: async (tourData) => {
+      if (!user) {
+        throw new Error("User not authenticated.");
+      }
+      const authHeaders = await user.getAuthHeaders();
+
+      if (tourId) {
+        const response = await api.put<TourData>(`/tours/${tourId}`, tourData, { headers: authHeaders });
+        return response.data;
+      } else {
+        const response = await api.post<TourData>('/tours', tourData, { headers: authHeaders });
+        return response.data;
+      }
+    },
+    onSuccess: (data) => {
+      setTourId(data.id);
+      setTourTitle(data.title);
+      setTourDescription(data.description || '');
+      setTourCurrentStatus(data.status);
+      const sortedSteps = data.tourSteps.sort((a, b) => (a.stepOrder || 0) - (b.stepOrder || 0));
+      setTourSteps(sortedSteps.map((step) => ({ ...step, id: step.id || Date.now().toString() })));
+      setSelectedStepIndex(0);
+      
+      queryClient.invalidateQueries({ queryKey: ['tours'] });
+      queryClient.invalidateQueries({ queryKey: ['tour', data.id] });
+
+      alert('Tour saved successfully!');
+      if (!urlTourId && data.id) {
+        window.history.replaceState(null, '', `/editor?tourId=${data.id}`);
+      }
+    },
+    onError: (err) => {
+      console.error('Error saving tour:', err);
+      alert(`Failed to save tour: ${err.message}`);
+    },
+  });
+
+  const handleSaveTour = () => {
+    if (!tourTitle.trim()) {
+      alert("Tour title cannot be empty.");
+      return;
+    }
+    if (tourSteps.some(step => !step.imageUrl && step.annotations.length > 0)) {
+        alert("Steps with annotations must have an image.");
+        return;
+    }
+
+    saveTourMutation.mutate({
+      title: tourTitle,
+      description: tourDescription,
+      status: tourCurrentStatus,
+      steps: tourSteps.map((step, index) => ({
+        id: step.id?.includes('-') ? undefined : step.id,
+        imageUrl: step.imageUrl,
+        description: step.description,
+        stepOrder: index,
+        annotations: step.annotations.map(ann => ({ ...ann, id: ann.id?.includes('-') ? undefined : ann.id }))
+      })),
+    });
+  };
 
   const handleAddStep = () => {
     const newStep: TourStep = {
@@ -196,64 +260,6 @@ const ProductTourEditor: React.FC = () => {
     });
   };
 
-  const handleSaveTour = async () => {
-    if (!tourTitle.trim()) {
-      setSaveError("Tour title cannot be empty.");
-      return;
-    }
-    if (tourSteps.some(step => !step.imageUrl && step.annotations.length > 0)) {
-        setSaveError("Steps with annotations must have an image.");
-        return;
-    }
-
-    setIsSaving(true);
-    setSaveError(null);
-    setSaveSuccess(false);
-
-    try {
-      const method = tourId ? 'PUT' : 'POST';
-      const url = tourId ? `/api/tours/${tourId}` : '/api/tours';
-
-      const response = await fetch(url, {
-        method,
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          title: tourTitle,
-          description: tourDescription,
-          status: tourCurrentStatus, // Use the current tour status from state
-          steps: tourSteps.map((step, index) => ({
-            id: step.id.includes('-') ? undefined : step.id,
-            imageUrl: step.imageUrl,
-            description: step.description,
-            stepOrder: index,
-            annotations: step.annotations.map(ann => ({ ...ann, id: ann.id.includes('-') ? undefined : ann.id }))
-          })),
-        }),
-      });
-
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error || `HTTP error! status: ${response.status}`);
-      }
-
-      const savedTour = await response.json();
-      console.log('Tour saved successfully:', savedTour);
-      setSaveSuccess(true);
-      setTourId(savedTour.id);
-      if (savedTour.id) {
-        window.history.replaceState(null, '', `/editor?tourId=${savedTour.id}`);
-      }
-
-    } catch (e: any) {
-      console.error('Error saving tour:', e);
-      setSaveError(e.message);
-    } finally {
-      setIsSaving(false);
-    }
-  };
-
   const handleNextStepInEditor = () => {
     if (selectedStepIndex < tourSteps.length - 1) {
       setDirection(1);
@@ -283,12 +289,12 @@ const ProductTourEditor: React.FC = () => {
     })
   };
 
-  if (isLoadingTour) {
-    return <div className="p-4 text-center text-lg">Loading tour...</div>;
+  if (isLoadingTour || saveTourMutation.isPending) {
+    return <div className="p-4 text-center text-lg">{isLoadingTour ? 'Loading tour...' : 'Saving tour...'}</div>;
   }
 
-  if (loadTourError) {
-    return <div className="p-4 text-center text-red-500">Error loading tour: {loadTourError}</div>;
+  if (isLoadTourError) {
+    return <div className="p-4 text-center text-red-500">Error loading tour: {loadTourError?.message}</div>;
   }
 
   return (
@@ -317,11 +323,11 @@ const ProductTourEditor: React.FC = () => {
                 placeholder="A brief description of this tour"
               />
             </div>
-            <Button onClick={handleSaveTour} disabled={isSaving} className="w-full bg-green-500 text-white">
-              {isSaving ? 'Saving...' : 'Save Tour'}
+            <Button onClick={handleSaveTour} disabled={saveTourMutation.isPending} className="w-full bg-green-500 text-white">
+              {saveTourMutation.isPending ? 'Saving...' : 'Save Tour'}
             </Button>
-            {saveError && <p className="text-red-500 text-sm">Error: {saveError}</p>}
-            {saveSuccess && <p className="text-green-500 text-sm">Tour saved successfully!</p>}
+            {saveTourMutation.isError && <p className="text-red-500 text-sm">Error: {saveTourMutation.error?.message}</p>}
+            {saveTourMutation.isSuccess && <p className="text-green-500 text-sm">Tour saved successfully!</p>}
           </div>
 
           <TourStepManager
@@ -356,7 +362,7 @@ const ProductTourEditor: React.FC = () => {
             tourId={tourId}
             initialStatus={tourCurrentStatus}
             onStatusChange={(newStatus) => {
-              setTourCurrentStatus(newStatus); // Update local status state
+              setTourCurrentStatus(newStatus);
               console.log('Tour status changed to:', newStatus);
             }}
           />

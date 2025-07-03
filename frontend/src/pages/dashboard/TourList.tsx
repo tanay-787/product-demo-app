@@ -1,61 +1,59 @@
-import React, { useEffect, useState } from 'react';
+import React from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import api from '@/lib/api';
+import { useUser } from '@stackframe/react'; // Import useUser
 
 interface Tour {
   id: string;
-  title: string; // Renamed from 'name' to 'title' to match backend schema
-  status: string; // e.g., 'Draft', 'Published', 'Private'
-  views?: number; // Optional as it might be added later
+  title: string;
+  status: string;
+  views?: number;
   createdAt: string;
 }
 
 const TourList: React.FC = () => {
-  const [tours, setTours] = useState<Tour[]>([]);
-  const [loading, setLoading] = useState<boolean>(true);
-  const [error, setError] = useState<string | null>(null);
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
+  const user = useUser({ or: "redirect" }); // Get the user object
 
-  const fetchTours = async () => {
-    setLoading(true);
-    setError(null);
-    try {
-      const response = await fetch('/api/tours'); // Proxy will redirect this to backend
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
+  // Use useQuery to fetch tours
+  const { data: tours, isLoading, isError, error } = useQuery<Tour[], Error>({
+    queryKey: ['tours'],
+    queryFn: async () => {
+      if (!user) {
+        throw new Error("User not authenticated.");
       }
-      const data: Tour[] = await response.json();
-      setTours(data);
-    } catch (e: any) {
-      setError(e.message);
-    } finally {
-      setLoading(false);
-    }
-  };
+      const authHeaders = await user.getAuthHeaders();
+      const response = await api.get<Tour[]>('/tours', { headers: authHeaders });
+      return response.data;
+    },
+    enabled: !!user, // Only run query if user is available
+  });
 
-  useEffect(() => {
-    fetchTours();
-  }, []);
+  // Use useMutation for deleting a tour
+  const deleteTourMutation = useMutation<void, Error, string>({
+    mutationFn: async (tourId: string) => {
+      if (!user) {
+        throw new Error("User not authenticated.");
+      }
+      const authHeaders = await user.getAuthHeaders();
+      await api.delete(`/tours/${tourId}`, { headers: authHeaders });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['tours'] }); // Invalidate and refetch tours after deletion
+      alert('Tour deleted successfully!');
+    },
+    onError: (err) => {
+      console.error('Error deleting tour:', err);
+      alert(`Failed to delete tour: ${err.message}`);
+    },
+  });
 
-  const handleDeleteTour = async (tourId: string) => {
+  const handleDeleteTour = (tourId: string) => {
     if (window.confirm('Are you sure you want to delete this tour?')) {
-      try {
-        const response = await fetch(`/api/tours/${tourId}`, {
-          method: 'DELETE',
-        });
-
-        if (!response.ok) {
-          const errorData = await response.json();
-          throw new Error(errorData.error || `HTTP error! status: ${response.status}`);
-        }
-
-        // Remove the deleted tour from the state
-        setTours(tours.filter((tour) => tour.id !== tourId));
-        alert('Tour deleted successfully!');
-      } catch (e: any) {
-        console.error('Error deleting tour:', e);
-        alert(`Failed to delete tour: ${e.message}`);
-      }
+      deleteTourMutation.mutate(tourId);
     }
   };
 
@@ -63,12 +61,12 @@ const TourList: React.FC = () => {
     navigate(`/editor?tourId=${tourId}`);
   };
 
-  if (loading) {
+  if (isLoading) {
     return <div className="mt-4 text-center">Loading tours...</div>;
   }
 
-  if (error) {
-    return <div className="mt-4 text-center text-red-500">Error: {error}</div>;
+  if (isError) {
+    return <div className="mt-4 text-center text-red-500">Error: {error?.message}</div>;
   }
 
   return (
@@ -81,7 +79,7 @@ const TourList: React.FC = () => {
           </Button>
         </Link>
       </div>
-      {tours.length === 0 ? (
+      {tours && tours.length === 0 ? (
         <p className="text-gray-500">No tours created yet. Click "Create New Tour" to start!</p>
       ) : (
         <div className="overflow-x-auto">
@@ -96,7 +94,7 @@ const TourList: React.FC = () => {
               </tr>
             </thead>
             <tbody>
-              {tours.map((tour) => (
+              {tours?.map((tour) => (
                 <tr key={tour.id} className="hover:bg-gray-50">
                   <td className="py-2 px-4 border-b">{tour.title}</td>
                   <td className="py-2 px-4 border-b">{tour.status}</td>
@@ -106,8 +104,13 @@ const TourList: React.FC = () => {
                     <Button variant="outline" size="sm" onClick={() => handleEditTour(tour.id)} className="mr-2">
                       Edit
                     </Button>
-                    <Button variant="destructive" size="sm" onClick={() => handleDeleteTour(tour.id)}>
-                      Delete
+                    <Button
+                      variant="destructive"
+                      size="sm"
+                      onClick={() => handleDeleteTour(tour.id)}
+                      disabled={deleteTourMutation.isPending && deleteTourMutation.variables === tour.id}
+                    >
+                      {deleteTourMutation.isPending && deleteTourMutation.variables === tour.id ? 'Deleting...' : 'Delete'}
                     </Button>
                   </td>
                 </tr>
@@ -115,6 +118,9 @@ const TourList: React.FC = () => {
             </tbody>
           </table>
         </div>
+      )}
+      {deleteTourMutation.isError && (
+        <p className="text-red-500 text-sm mt-2">Error deleting tour: {deleteTourMutation.error?.message}</p>
       )}
     </div>
   );
