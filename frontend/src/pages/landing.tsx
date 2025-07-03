@@ -25,15 +25,13 @@ import { motion, useScroll, useTransform } from "motion/react"
 
 
 const LandingPage: React.FC = () => {
-  const user = useUser()
   const navigate = useNavigate()
   const heroRef = useRef(null)
   const { scrollYProgress } = useScroll()
   const y = useTransform(scrollYProgress, [0, 1], ["0%", "50%"])
 
   const handleGetStarted = () => {
-      useUser({ or: "redirect" })
-      navigate("/dashboard")
+      navigate("/dashboard");
   }
 
   const features = [
