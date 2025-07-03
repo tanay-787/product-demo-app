@@ -7,7 +7,7 @@ import TourPreview from './TourPreview';
 import AnnotationTool from './AnnotationTool';
 import { useUser } from '@stackframe/react';
 import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
+import { Label } from '@/components/ui/label'
 import { Button } from '@/components/ui/button';
 import { useSearchParams } from 'react-router-dom';
 import { Textarea } from '@/components/ui/textarea';
@@ -65,7 +65,7 @@ const ProductTourEditor: React.FC = () => {
       const response = await api.get<TourData>(`/tours/${urlTourId}`, { headers: authHeaders });
       return response.data;
     },
-    enabled: !!urlTourId && !!user, // Only fetch if urlTourId and user are available
+    enabled: !!urlTourId && !!user,
   });
 
   useEffect(() => {
@@ -290,44 +290,47 @@ const ProductTourEditor: React.FC = () => {
   };
 
   if (isLoadingTour || saveTourMutation.isPending) {
-    return <div className="p-4 text-center text-lg">{isLoadingTour ? 'Loading tour...' : 'Saving tour...'}</div>;
+    return <div className="p-4 text-center text-lg text-foreground">{isLoadingTour ? 'Loading tour...' : 'Saving tour...'}</div>;
   }
 
   if (isLoadTourError) {
-    return <div className="p-4 text-center text-red-500">Error loading tour: {loadTourError?.message}</div>;
+    return <div className="p-4 text-center text-destructive">Error loading tour: {loadTourError?.message}</div>;
   }
 
   return (
-    <div className="p-4">
-      <h1 className="text-2xl font-bold mb-4">Product Tour Editor</h1>
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+    <div className="p-4 bg-background text-foreground min-h-screen">
+      <h1 className="text-3xl font-bold mb-6">Product Tour Editor</h1>
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
         <div>
-          <div className="space-y-4 mb-4">
+          <div className="space-y-4 mb-8 p-6 border rounded-lg bg-card shadow-sm">
+            <h2 className="text-xl font-semibold text-card-foreground mb-4">Tour Details</h2>
             <div>
-              <Label htmlFor="tour-title">Tour Title</Label>
+              <Label htmlFor="tour-title" className="text-muted-foreground">Tour Title</Label>
               <Input
                 id="tour-title"
                 type="text"
                 value={tourTitle}
                 onChange={(e) => setTourTitle(e.target.value)}
                 placeholder="e.g., Onboarding Flow for New Users"
+                className="mt-1"
               />
             </div>
             <div>
-              <Label htmlFor="tour-description">Tour Description (Optional)</Label>
-              <Input
+              <Label htmlFor="tour-description" className="text-muted-foreground">Tour Description (Optional)</Label>
+              <Textarea
                 id="tour-description"
-                type="text"
                 value={tourDescription}
                 onChange={(e) => setTourDescription(e.target.value)}
                 placeholder="A brief description of this tour"
+                rows={3}
+                className="mt-1"
               />
             </div>
-            <Button onClick={handleSaveTour} disabled={saveTourMutation.isPending} className="w-full bg-green-500 text-white">
+            <Button onClick={handleSaveTour} disabled={saveTourMutation.isPending} className="w-full mt-4">
               {saveTourMutation.isPending ? 'Saving...' : 'Save Tour'}
             </Button>
-            {saveTourMutation.isError && <p className="text-red-500 text-sm">Error: {saveTourMutation.error?.message}</p>}
-            {saveTourMutation.isSuccess && <p className="text-green-500 text-sm">Tour saved successfully!</p>}
+            {saveTourMutation.isError && <p className="text-destructive text-sm mt-2">Error: {saveTourMutation.error?.message}</p>}
+            {saveTourMutation.isSuccess && <p className="text-green-500 text-sm mt-2">Tour saved successfully!</p>}
           </div>
 
           <TourStepManager
@@ -340,22 +343,22 @@ const ProductTourEditor: React.FC = () => {
           />
 
           {currentStep && (
-            <>
-              <div className="space-y-4 mt-4">
-                <div>
-                  <Label htmlFor="step-description">Step Description</Label>
-                  <Textarea
-                    id="step-description"
-                    value={currentStep.description}
-                    onChange={handleStepDescriptionChange}
-                    placeholder="Describe what's happening in this step..."
-                    rows={3}
-                  />
-                </div>
+            <div className="space-y-4 mt-8 p-6 border rounded-lg bg-card shadow-sm">
+              <h3 className="text-xl font-semibold text-card-foreground mb-2">Current Step Content</h3>
+              <div>
+                <Label htmlFor="step-description" className="text-muted-foreground">Step Description</Label>
+                <Textarea
+                  id="step-description"
+                  value={currentStep.description}
+                  onChange={handleStepDescriptionChange}
+                  placeholder="Describe what's happening in this step..."
+                  rows={3}
+                  className="mt-1"
+                />
               </div>
               <ImageUploader onImageUpload={handleImageUpload} currentImageUrl={currentStep.imageUrl} />
               <AnnotationTool onAddAnnotation={handleAddAnnotation} />
-            </>
+            </div>
           )}
           <ScreenRecorder />
           <PublishControls
@@ -369,7 +372,7 @@ const ProductTourEditor: React.FC = () => {
         </div>
         <div>
           <h2 className="text-xl font-semibold mb-2">Tour Preview</h2>
-          <div className="relative mb-6 overflow-hidden border rounded-md min-h-96 flex items-center justify-center">
+          <div className="relative mb-6 overflow-hidden border border-border rounded-lg min-h-96 flex items-center justify-center bg-muted">
             <AnimatePresence initial={false} custom={direction}>
               <motion.div
                 key={selectedStepIndex} 
@@ -393,7 +396,7 @@ const ProductTourEditor: React.FC = () => {
               </motion.div>
             </AnimatePresence>
             {currentStep?.description && (
-              <div className="absolute bottom-4 left-1/2 -translate-x-1/2 bg-black bg-opacity-70 text-white p-3 rounded-md max-w-xs text-sm text-center z-10">
+              <div className="absolute bottom-4 left-1/2 -translate-x-1/2 bg-popover text-popover-foreground p-3 rounded-md max-w-xs text-sm text-center shadow-lg z-10">
                 {currentStep.description}
               </div>
             )}
@@ -402,7 +405,7 @@ const ProductTourEditor: React.FC = () => {
             <Button onClick={handlePreviousStepInEditor} disabled={selectedStepIndex === 0} variant="outline">
               Previous Step
             </Button>
-            <span className="text-lg font-semibold">{selectedStepIndex + 1} / {tourSteps.length}</span>
+            <span className="text-lg font-semibold text-muted-foreground">{selectedStepIndex + 1} / {tourSteps.length}</span>
             <Button onClick={handleNextStepInEditor} disabled={selectedStepIndex === tourSteps.length - 1}>
               Next Step
             </Button>

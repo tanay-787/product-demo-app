@@ -55,7 +55,6 @@ const PublishControls: React.FC<PublishControlsProps> = ({
 
       setPublishSuccess(true);
       if (newStatus === 'published') {
-        // Generate a mock public link for now. In a real app, this would be a dedicated public viewer route.
         setShareLink(`${window.location.origin}/view/${tourId}`);
       } else {
         setShareLink(null);
@@ -71,35 +70,35 @@ const PublishControls: React.FC<PublishControlsProps> = ({
   };
 
   return (
-    <div className="border p-4 rounded-md mt-4">
-      <h3 className="text-lg font-semibold mb-2">Publish Tour</h3>
+    <div className="border border-border p-6 rounded-lg mt-8 bg-card shadow-sm">
+      <h3 className="text-xl font-semibold text-card-foreground mb-4">Publish Tour</h3>
       <div className="flex items-center space-x-2 mb-4">
         <Switch
           id="public-mode"
           checked={isPublic}
           onCheckedChange={setIsPublic}
-          disabled={!tourId || isPublishing} // Disable if no tourId or currently publishing
+          disabled={!tourId || isPublishing}
         />
-        <Label htmlFor="public-mode">Make Public</Label>
+        <Label htmlFor="public-mode" className="text-muted-foreground">Make Public</Label>
       </div>
-      <Button onClick={handlePublish} disabled={!tourId || isPublishing} className="w-full bg-purple-600 text-white">
+      <Button onClick={handlePublish} disabled={!tourId || isPublishing} className="w-full bg-primary hover:bg-primary/90 text-primary-foreground">
         {isPublishing ? 'Publishing...' : 'Update Publish Status'}
       </Button>
-      {publishError && <p className="text-red-500 text-sm mt-2">Error: {publishError}</p>}
+      {publishError && <p className="text-destructive text-sm mt-2">Error: {publishError}</p>}
       {publishSuccess && <p className="text-green-500 text-sm mt-2">Publish status updated!</p>}
       {shareLink && (
-        <div className="mt-4">
-          <Label htmlFor="share-link" className="block mb-2">Shareable Public Link:</Label>
+        <div className="mt-4 p-4 border border-border rounded-md bg-background">
+          <Label htmlFor="share-link" className="block mb-2 text-muted-foreground">Shareable Public Link:</Label>
           <Input
             id="share-link"
             type="text"
             value={shareLink}
             readOnly
-            className="w-full bg-gray-100 dark:bg-gray-700"
+            className="w-full bg-muted text-foreground border-border"
           />
           <Button
             onClick={() => navigator.clipboard.writeText(shareLink)}
-            className="mt-2 w-full bg-gray-200 text-gray-800 hover:bg-gray-300 dark:bg-gray-800 dark:text-gray-200 dark:hover:bg-gray-900"
+            className="mt-2 w-full bg-secondary hover:bg-secondary/80 text-secondary-foreground"
           >
             Copy Link
           </Button>

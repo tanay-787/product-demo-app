@@ -70,23 +70,24 @@ const TourPreview: React.FC<TourPreviewProps> = ({
   };
 
   return (
-    <div className="relative w-full h-96 border rounded-md flex items-center justify-center bg-gray-50 dark:bg-gray-800 overflow-hidden" ref={containerRef}>
+    <div className="relative w-full h-96 border border-border rounded-md flex items-center justify-center bg-muted overflow-hidden" ref={containerRef}>
       {imageUrl ? (
         <img src={imageUrl} alt="Tour Preview" className="max-w-full max-h-full object-contain" />
       ) : (
-        <p className="text-gray-500">Upload an image or record your screen to see a preview.</p>
+        <p className="text-muted-foreground">Upload an image or record your screen to see a preview.</p>
       )}
       {annotations.map((annotation) => (
         <Draggable
-          key={annotation.id} // Use the potentially optional ID
+          key={annotation.id} 
           bounds="parent"
           onDrag={handleDrag}
           onStop={handleStop}
-          defaultPosition={{ x: (annotation.x / 100) * (containerRef.current?.getBoundingClientRect().width || 0), y: (annotation.y / 100) * (containerRef.current?.getBoundingClientRect().height || 0) }}
+          defaultPosition={{ x: (annotation.x / 100) * (containerRef.current?.offsetWidth || 0), y: (annotation.y / 100) * (containerRef.current?.offsetHeight || 0) }} // Use offsetWidth/Height for initial pixel calculation
+
         >
           <div
             data-annotation-id={annotation.id} 
-            className="absolute p-2 bg-blue-500 text-white text-sm rounded-md shadow-lg cursor-grab flex items-center whitespace-nowrap"
+            className="absolute p-2 bg-primary text-primary-foreground text-sm rounded-md shadow-lg cursor-grab flex items-center whitespace-nowrap border border-primary-foreground/30"
             style={{
               left: `${annotation.x}%`,
               top: `${annotation.y}%`,
@@ -96,10 +97,10 @@ const TourPreview: React.FC<TourPreviewProps> = ({
             {annotation.text}
             {onDeleteAnnotation && (
               <XCircle
-                className="h-4 w-4 ml-2 cursor-pointer text-red-300 hover:text-red-100"
+                className="h-4 w-4 ml-2 cursor-pointer text-primary-foreground/70 hover:text-primary-foreground"
                 onClick={(e) => {
                   e.stopPropagation();
-                  if (annotation.id) { // Ensure id exists before passing
+                  if (annotation.id) {
                     handleDeleteClick(annotation.id);
                   }
                 }}

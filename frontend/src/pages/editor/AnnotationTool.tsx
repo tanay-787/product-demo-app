@@ -20,22 +20,23 @@ const AnnotationTool: React.FC<AnnotationToolProps> = ({ onAddAnnotation }) => {
   };
 
   return (
-    <div className="border p-4 rounded-md mt-4">
-      <h3 className="text-lg font-semibold mb-2">Add Annotation</h3>
+    <div className="border border-border p-6 rounded-lg mt-8 bg-card shadow-sm">
+      <h3 className="text-xl font-semibold text-card-foreground mb-4">Add Annotation</h3>
       <div className="space-y-4">
         <div>
-          <Label htmlFor="annotation-text">Annotation Text</Label>
+          <Label htmlFor="annotation-text" className="text-muted-foreground">Annotation Text</Label>
           <Input
             id="annotation-text"
             type="text"
             value={annotationText}
             onChange={(e) => setAnnotationText(e.target.value)}
             placeholder="Enter annotation text"
+            className="mt-1"
           />
         </div>
         <div className="grid grid-cols-2 gap-4">
           <div>
-            <Label htmlFor="position-x">Position X (%)</Label>
+            <Label htmlFor="position-x" className="text-muted-foreground">Position X (%)</Label>
             <Input
               id="position-x"
               type="number"
@@ -43,10 +44,11 @@ const AnnotationTool: React.FC<AnnotationToolProps> = ({ onAddAnnotation }) => {
               onChange={(e) => setPositionX(parseInt(e.target.value))}
               min="0"
               max="100"
+              className="mt-1"
             />
           </div>
           <div>
-            <Label htmlFor="position-y">Position Y (%)</Label>
+            <Label htmlFor="position-y" className="text-muted-foreground">Position Y (%)</Label>
             <Input
               id="position-y"
               type="number"
@@ -54,10 +56,11 @@ const AnnotationTool: React.FC<AnnotationToolProps> = ({ onAddAnnotation }) => {
               onChange={(e) => setPositionY(parseInt(e.target.value))}
               min="0"
               max="100"
+              className="mt-1"
             />
           </div>
         </div>
-        <Button onClick={handleAdd} className="w-full bg-blue-500 text-white">
+        <Button onClick={handleAdd} className="w-full bg-primary hover:bg-primary/90 text-primary-foreground">
           Add Annotation
         </Button>
       </div>

@@ -1,6 +1,6 @@
 import React, { useState, useRef } from 'react';
 import { Button } from '@/components/ui/button';
-import { Mic, Video, Square } from 'lucide-react';
+import { Video, Square, Download } from 'lucide-react'; // Added Download icon
 
 const ScreenRecorder: React.FC = () => {
   const [isRecording, setIsRecording] = useState<boolean>(false);
@@ -60,34 +60,34 @@ const ScreenRecorder: React.FC = () => {
   };
 
   return (
-    <div className="border p-4 rounded-md mt-4">
-      <h3 className="text-lg font-semibold mb-2">Screen Recorder</h3>
-      <div className="flex items-center space-x-2">
+    <div className="border border-border p-6 rounded-lg mt-8 bg-card shadow-sm">
+      <h3 className="text-xl font-semibold text-card-foreground mb-4">Screen Recorder</h3>
+      <div className="flex items-center space-x-2 mb-4">
         {!isRecording ? (
-          <Button onClick={startRecording} className="bg-green-500 text-white flex items-center">
+          <Button onClick={startRecording} className="bg-primary hover:bg-primary/90 text-primary-foreground flex items-center">
             <Video className="h-4 w-4 mr-2" /> Start Recording
           </Button>
         ) : (
-          <Button onClick={stopRecording} className="bg-red-500 text-white flex items-center">
+          <Button onClick={stopRecording} className="bg-destructive hover:bg-destructive/90 text-destructive-foreground flex items-center">
             <Square className="h-4 w-4 mr-2" /> Stop Recording
           </Button>
         )}
         {recordedVideoUrl && (
-          <Button onClick={downloadRecording} variant="outline" className="flex items-center">
-            Download Recording
+          <Button onClick={downloadRecording} variant="outline" className="flex items-center text-muted-foreground hover:bg-accent hover:text-accent-foreground">
+            <Download className="h-4 w-4 mr-2" /> Download Recording
           </Button>
         )}
       </div>
       {isRecording && (
-        <p className="text-sm text-yellow-600 mt-2">Recording... (Click Stop to save)</p>
+        <p className="text-sm text-yellow-500 mt-2">Recording... (Click Stop to save)</p>
       )}
       {recordedVideoUrl && (
-        <div className="mt-4">
-          <p className="text-sm text-gray-600 mb-2">Preview:</p>
+        <div className="mt-4 p-2 border border-border rounded-md bg-background">
+          <p className="text-sm text-muted-foreground mb-2">Preview:</p>
           <video src={recordedVideoUrl} controls className="w-full max-h-60 rounded-md bg-black"></video>
         </div>
       )}
-      <p className="text-sm text-gray-600 mt-2">
+      <p className="text-sm text-muted-foreground mt-4">
         This feature allows you to record your screen and optionally include microphone audio.
         The recording will be saved locally. (Backend upload for video is not yet implemented).
       </p>

@@ -32,15 +32,15 @@ const ImageUploader: React.FC<ImageUploaderProps> = ({
   };
 
   return (
-    <div className="border p-4 rounded-md mt-4">
-      <h3 className="text-lg font-semibold mb-2">Upload Screenshot</h3>
-      <input type="file" accept="image/*" onChange={handleImageUpload} className="mb-2" />
+    <div className="border border-border p-4 rounded-lg mt-4 bg-card shadow-sm">
+      <h3 className="text-lg font-semibold text-card-foreground mb-2">Upload Screenshot</h3>
+      <input type="file" accept="image/*" onChange={handleImageUpload} className="mb-2 text-foreground file:text-primary file:bg-primary-foreground file:border-border file:rounded-md file:border file:px-3 file:py-1 file:text-sm file:font-medium hover:file:bg-primary-foreground/80" />
       {previewUrl ? (
-        <div className="mt-4">
-          <img src={previewUrl} alt="Uploaded Screenshot" className="max-w-full h-auto rounded-md" />
+        <div className="mt-4 p-2 border border-border rounded-md bg-background">
+          <img src={previewUrl} alt="Uploaded Screenshot" className="max-w-full h-auto rounded-md object-contain mx-auto" />
         </div>
       ) : (
-        <div className="mt-4 p-4 border border-dashed rounded-md text-center text-gray-500">
+        <div className="mt-4 p-4 border border-dashed border-muted-foreground rounded-md text-center text-muted-foreground bg-muted/30">
           No image uploaded for this step. Upload one or it will appear blank in the tour.
         </div>
       )}

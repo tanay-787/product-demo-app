@@ -9,7 +9,7 @@ interface TourStepManagerProps {
   onSelectStep: (index: number) => void;
   onAddStep: () => void;
   onDeleteStep: (index: number) => void;
-  onMoveStep: (index: number, direction: 'up' | 'down') => void; // New prop for reordering
+  onMoveStep: (index: number, direction: 'up' | 'down') => void; 
 }
 
 const TourStepManager: React.FC<TourStepManagerProps> = ({
@@ -21,19 +21,19 @@ const TourStepManager: React.FC<TourStepManagerProps> = ({
   onMoveStep,
 }) => {
   return (
-    <div className="border p-4 rounded-md mt-4">
-      <h3 className="text-lg font-semibold mb-2">Manage Tour Steps</h3>
-      <div className="space-y-2 mb-4">
+    <div className="border border-border p-6 rounded-lg mt-8 bg-card shadow-sm">
+      <h3 className="text-xl font-semibold text-card-foreground mb-4">Manage Tour Steps</h3>
+      <div className="space-y-3 mb-4">
         {tourSteps.map((step, index) => (
           <div
-            key={step.id} // Use the step's unique ID as key
-            className={`flex items-center justify-between p-2 border rounded-md cursor-pointer ${
-              index === selectedStepIndex ? 'bg-blue-100 dark:bg-blue-900 border-blue-500' : 'hover:bg-gray-50 dark:hover:bg-gray-800'
+            key={step.id} 
+            className={`flex items-center justify-between p-3 border rounded-md cursor-pointer transition-colors duration-200 \
+              ${index === selectedStepIndex ? 'bg-primary/10 border-primary text-primary-foreground' : 'bg-background hover:bg-muted/50 border-border text-foreground'}
             }`}
             onClick={() => onSelectStep(index)}
           >
             <span className="font-medium">Step {index + 1}</span>
-            <span className="text-sm text-gray-600 dark:text-gray-400 truncate ml-2 mr-auto">
+            <span className="text-sm text-muted-foreground truncate ml-2 mr-auto">
               {step.description || (step.imageUrl ? 'Image uploaded' : 'No content')}
             </span>
             <div className="flex items-center space-x-2">
@@ -44,7 +44,8 @@ const TourStepManager: React.FC<TourStepManagerProps> = ({
                   e.stopPropagation();
                   onMoveStep(index, 'up');
                 }}
-                disabled={index === 0} // Disable if it's the first step
+                disabled={index === 0} 
+                className="h-8 w-8 text-muted-foreground hover:bg-accent hover:text-accent-foreground"
               >
                 <ArrowUp className="h-4 w-4" />
               </Button>
@@ -55,7 +56,8 @@ const TourStepManager: React.FC<TourStepManagerProps> = ({
                   e.stopPropagation();
                   onMoveStep(index, 'down');
                 }}
-                disabled={index === tourSteps.length - 1} // Disable if it's the last step
+                disabled={index === tourSteps.length - 1} 
+                className="h-8 w-8 text-muted-foreground hover:bg-accent hover:text-accent-foreground"
               >
                 <ArrowDown className="h-4 w-4" />
               </Button>
@@ -64,10 +66,10 @@ const TourStepManager: React.FC<TourStepManagerProps> = ({
                   variant="destructive"
                   size="sm"
                   onClick={(e) => {
-                    e.stopPropagation(); // Prevent selecting the step when deleting
+                    e.stopPropagation(); 
                     onDeleteStep(index);
                   }}
-                  className="ml-2"
+                  className="ml-2 h-8"
                 >
                   Delete
                 </Button>
@@ -76,7 +78,7 @@ const TourStepManager: React.FC<TourStepManagerProps> = ({
           </div>
         ))}
       </div>
-      <Button onClick={onAddStep} className="w-full bg-blue-500 text-white">
+      <Button onClick={onAddStep} className="w-full bg-blue-600 hover:bg-blue-700 text-white">
         Add New Step
       </Button>
     </div>
