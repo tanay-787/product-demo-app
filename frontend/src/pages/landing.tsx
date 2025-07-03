@@ -23,6 +23,7 @@ import {
 } from "lucide-react"
 import { motion, useScroll, useTransform } from "motion/react"
 
+
 const LandingPage: React.FC = () => {
   const user = useUser()
   const navigate = useNavigate()
@@ -174,7 +175,7 @@ const LandingPage: React.FC = () => {
             <Button
               onClick={handleGetStarted}
               size="lg"
-              className="bg-gradient-to-r from-primary to-chart-1 hover:from-primary/90 hover:to-chart-1/90 text-primary-foreground px-8 py-4 rounded-full text-lg font-semibold shadow-2xl transform hover:scale-105 transition-all duration-300 group"
+              className="bg-gradient-to-r from-primary to-chart-1 hover:from-primary/90 hover:to-chart-1/90 text-primary-foreground px-8 py-4 rounded-full text-md font-semibold shadow-2xl transform hover:scale-105 transition-all duration-300 group"
             >
               Begin Your Story
               <ArrowRight className="ml-2 w-5 h-5 group-hover:translate-x-1 transition-transform" />

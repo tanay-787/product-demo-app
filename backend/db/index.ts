@@ -1,6 +1,6 @@
 import { drizzle } from "drizzle-orm/neon-serverless"
 import { Pool, neonConfig } from "@neondatabase/serverless"
-import { tours, tourSteps, annotations, tourStepsRelations, toursRelations, annotationsRelations } from './schema/product-tours';
+import { tours, tourSteps, tourShares, annotations, tourStepsRelations, toursRelations, annotationsRelations, tourSharesRelations } from './schema/product-tours';
 import dotenv from "dotenv"
 import ws from "ws"
 
@@ -12,7 +12,7 @@ if (!process.env.DATABASE_OWNER_URL) {
 
 neonConfig.webSocketConstructor = ws;
 
-const combinedSchema = { tours, tourSteps, annotations, toursRelations, tourStepsRelations, annotationsRelations };
+const combinedSchema = { tours, tourSteps, tourShares, annotations, toursRelations, tourStepsRelations, tourSharesRelations, annotationsRelations };
 
 const pool = new Pool({ connectionString: process.env.DATABASE_OWNER_URL! });
 

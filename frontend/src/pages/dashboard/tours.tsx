@@ -98,11 +98,23 @@ export default function ToursPage() {
     }
   }
 
-  const handleShareTour = (tourId: string) => {
-    const shareUrl = `${window.location.origin}/viewer/${tourId}`
-    navigator.clipboard.writeText(shareUrl)
-    // You could add a toast notification here
-    alert("Share link copied to clipboard!")
+  const handleShareTour = async (tourId: string) => {
+    if (!user) {
+      alert("User not authenticated to share tour.")
+      return
+    }
+
+    try {
+      const authHeaders = await user.getAuthHeaders()
+      const response = await api.get<{ shareId: string; isPublic: boolean; shareUrl: string }>(`/tours/${tourId}/share`, { headers: authHeaders })
+      const shareUrl = response.data.shareUrl
+      
+      await navigator.clipboard.writeText(shareUrl)
+      alert("Share link copied to clipboard!")
+    } catch (error) {
+      console.error("Failed to get share link:", error)
+      alert("Failed to get share link. Please try again.")
+    }
   }
 
   const getStatusColor = (status: string) => {

@@ -302,6 +302,8 @@ router.get("/:id/share", async (req, res, next) => {
       where: eq(tourShares.tourId, tourId),
     })
 
+    const baseUrl = process.env.FRONTEND_URL || `${req.protocol}://${req.get('host')}`;
+
     if (!shareData) {
       // Create default share settings
       const shareId = crypto.randomBytes(16).toString("hex")
@@ -317,14 +319,14 @@ router.get("/:id/share", async (req, res, next) => {
       return res.json({
         shareId: newShare[0].shareId,
         isPublic: false,
-        shareUrl: `${process.env.FRONTEND_URL || "http://localhost:5173"}/view/${tourId}`,
+        shareUrl: `${baseUrl}/view/${tourId}`,
       })
     }
 
     res.json({
       shareId: shareData.shareId,
       isPublic: shareData.isPublic,
-      shareUrl: `${process.env.FRONTEND_URL || "http://localhost:5173"}/view/${tourId}`,
+      shareUrl: `${baseUrl}/view/${tourId}`,
     })
   } catch (error) {
     next(error)
@@ -359,6 +361,8 @@ router.post("/:id/share", async (req, res, next) => {
       where: eq(tourShares.tourId, tourId),
     })
 
+    const baseUrl = process.env.FRONTEND_URL || `${req.protocol}://${req.get('host')}`;
+
     let shareData
     if (existingShare) {
       // Update existing share
@@ -388,7 +392,7 @@ router.post("/:id/share", async (req, res, next) => {
     res.json({
       shareId: shareData[0].shareId,
       isPublic: shareData[0].isPublic,
-      shareUrl: `${process.env.FRONTEND_URL || "http://localhost:5173"}/view/${tourId}`,
+      shareUrl: `${baseUrl}/view/${tourId}`,
     })
   } catch (error) {
     next(error)
