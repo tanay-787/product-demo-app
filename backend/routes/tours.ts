@@ -26,7 +26,7 @@ router.get("/", async (req, res, next) => {
         },
       },
     })
-    res.json(userTours)
+    res.json({ tours: userTours }) // Modified line: Wrap userTours in an object with 'tours' key
   } catch (error) {
     next(error)
   }
@@ -81,49 +81,45 @@ router.post("/", async (req, res, next) => {
       return res.status(400).json({ error: "Title is required." })
     }
 
-    // Start a transaction for atomicity
-    const result = await db.transaction(async (tx) => {
-      const newTourId = uuidv4()
-      const newTour = await tx
-        .insert(tours)
-        .values({
-          id: newTourId,
-          userId,
-          title,
-          description,
-          status: status || "draft",
-        })
-        .returning()
+    const newTourId = uuidv4()
+    const newTour = await db
+      .insert(tours)
+      .values({
+        id: newTourId,
+        userId,
+        title,
+        description,
+        status: status || "draft",
+      })
+      .returning()
 
-      if (steps && steps.length > 0) {
-        const stepInserts = steps.map((stepData: any, index: number) => ({
-          id: uuidv4(),
-          tourId: newTourId,
-          stepOrder: index,
-          imageUrl: stepData.imageUrl,
-          description: stepData.description,
-        }))
+    if (steps && steps.length > 0) {
+      const stepInserts = steps.map((stepData: any, index: number) => ({
+        id: uuidv4(),
+        tourId: newTourId,
+        stepOrder: index,
+        imageUrl: stepData.imageUrl,
+        description: stepData.description,
+      }))
 
-        const newSteps = await tx.insert(tourSteps).values(stepInserts).returning()
+      const newSteps = await db.insert(tourSteps).values(stepInserts).returning()
 
-        for (const newStep of newSteps) {
-          const originalStepData = steps.find((s: any) => s.stepOrder === newStep.stepOrder) // Find original step by order
-          if (originalStepData && originalStepData.annotations && originalStepData.annotations.length > 0) {
-            const annotationValues = originalStepData.annotations.map((ann: any) => ({
-              id: uuidv4(),
-              stepId: newStep.id,
-              text: ann.text,
-              x: ann.x,
-              y: ann.y,
-            }))
-            await tx.insert(annotations).values(annotationValues)
-          }
+      for (const newStep of newSteps) {
+        const originalStepData = steps.find((s: any) => s.stepOrder === newStep.stepOrder) // Find original step by order
+        if (originalStepData && originalStepData.annotations && originalStepData.annotations.length > 0) {
+          const annotationValues = originalStepData.annotations.map((ann: any) => ({
+            id: uuidv4(),
+            stepId: newStep.id,
+            text: ann.text,
+            x: ann.x,
+            y: ann.y,
+          }))
+          await db.insert(annotations).values(annotationValues)
         }
       }
-      return newTour[0]
-    })
+    }
 
-    res.status(201).json(result)
+    res.status(201).json(newTour[0])
   } catch (error) {
     next(error)
   }
@@ -157,47 +153,45 @@ router.put("/:id", async (req, res, next) => {
       return res.status(403).json({ error: "Forbidden: You do not own this tour." })
     }
 
-    await db.transaction(async (tx) => {
-      // Update tour details
-      await tx
-        .update(tours)
-        .set({
-          title,
-          description,
-          status: status || "draft",
-          updatedAt: new Date(),
+    // Update tour details
+    await db
+      .update(tours)
+      .set({
+        title,
+        description,
+        status: status || "draft",
+        updatedAt: new Date(),
+      })
+      .where(eq(tours.id, tourId))
+
+    // Delete existing steps and annotations for this tour
+    // This assumes cascade delete is set up correctly in your schema for annotations to tourSteps
+    await db.delete(tourSteps).where(eq(tourSteps.tourId, tourId))
+
+    // Insert new/updated steps and their annotations
+    if (steps && steps.length > 0) {
+      for (const stepData of steps) {
+        const newStepId = uuidv4()
+        await db.insert(tourSteps).values({
+          id: newStepId,
+          tourId: tourId,
+          stepOrder: stepData.stepOrder || 0,
+          imageUrl: stepData.imageUrl,
+          description: stepData.description,
         })
-        .where(eq(tours.id, tourId))
 
-      // Delete existing steps and annotations for this tour
-      await tx.delete(annotations).where(eq(annotations.stepId, tourSteps.id)) // This will cascade delete from tourSteps table if cascade is set up correctly in schema
-      await tx.delete(tourSteps).where(eq(tourSteps.tourId, tourId))
-
-      // Insert new/updated steps and their annotations
-      if (steps && steps.length > 0) {
-        for (const stepData of steps) {
-          const newStepId = uuidv4()
-          await tx.insert(tourSteps).values({
-            id: newStepId,
-            tourId: tourId,
-            stepOrder: stepData.stepOrder || 0,
-            imageUrl: stepData.imageUrl,
-            description: stepData.description,
-          })
-
-          if (stepData.annotations && stepData.annotations.length > 0) {
-            const annotationValues = stepData.annotations.map((ann: any) => ({
-              id: uuidv4(),
-              stepId: newStepId,
-              text: ann.text,
-              x: ann.x,
-              y: ann.y,
-            }))
-            await tx.insert(annotations).values(annotationValues)
-          }
+        if (stepData.annotations && stepData.annotations.length > 0) {
+          const annotationValues = stepData.annotations.map((ann: any) => ({
+            id: uuidv4(),
+            stepId: newStepId,
+            text: ann.text,
+            x: ann.x,
+            y: ann.y,
+          }))
+          await db.insert(annotations).values(annotationValues)
         }
       }
-    })
+    }
 
     res.json({ message: "Tour updated successfully." })
   } catch (error) {

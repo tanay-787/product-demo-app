@@ -1,4 +1,4 @@
-import { pgTable, uuid, text, timestamp, integer, boolean, varchar } from "drizzle-orm/pg-core"
+import { pgTable, uuid, text, timestamp, integer, boolean, varchar, real } from "drizzle-orm/pg-core"
 import { relations } from "drizzle-orm"
 
 // Product Tours Table
@@ -33,8 +33,8 @@ export const annotations = pgTable("annotations", {
     .notNull()
     .references(() => tourSteps.id, { onDelete: "cascade" }),
   text: text("text").notNull(),
-  x: integer("x").notNull(), // Percentage from left (0-100)
-  y: integer("y").notNull(), // Percentage from top (0-100)
+  x: real("x").notNull(), // Percentage from left (0-100)
+  y: real("y").notNull(), // Percentage from top (0-100)
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
 })
