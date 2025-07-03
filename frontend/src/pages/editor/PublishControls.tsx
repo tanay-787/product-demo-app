@@ -76,6 +76,11 @@ const PublishControls: React.FC<PublishControlsProps> = ({ tourId, initialStatus
   })
 
   useEffect(() => {
+    setStatus(initialStatus)
+  }, [initialStatus])
+  
+
+  useEffect(() => {
     if (shareData) {
       setIsPublic(shareData.isPublic)
     }

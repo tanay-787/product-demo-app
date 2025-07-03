@@ -105,10 +105,12 @@ export default function ToursPage() {
     }
 
     try {
+      console.log(`Attempting to get share link for tour ID: ${tourId}`); // Debug log
       const authHeaders = await user.getAuthHeaders()
       const response = await api.get<{ shareId: string; isPublic: boolean; shareUrl: string }>(`/tours/${tourId}/share`, { headers: authHeaders })
       const shareUrl = response.data.shareUrl
       
+      console.log(`Received share URL: ${shareUrl}`); // Debug log
       await navigator.clipboard.writeText(shareUrl)
       alert("Share link copied to clipboard!")
     } catch (error) {

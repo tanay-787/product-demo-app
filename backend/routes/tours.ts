@@ -92,6 +92,14 @@ router.post("/", async (req, res, next) => {
         status: status || "draft",
       })
 
+    // Create a default tourShares entry immediately for the new tour
+    const shareId = crypto.randomBytes(16).toString("hex");
+    await db.insert(tourShares).values({
+      tourId: newTourId,
+      shareId: shareId,
+      isPublic: false,
+    });
+
     if (steps && steps.length > 0) {
       const stepInserts = steps.map((stepData: any, index: number) => ({
         id: uuidv4(),
@@ -305,7 +313,8 @@ router.get("/:id/share", async (req, res, next) => {
     const baseUrl = process.env.FRONTEND_URL || `${req.protocol}://${req.get('host')}`;
 
     if (!shareData) {
-      // Create default share settings
+      // This block will now only be hit if a tour was created *before* this fix
+      // For newly created tours, the entry is already made in POST /.
       const shareId = crypto.randomBytes(16).toString("hex")
       const newShare = await db
         .insert(tourShares)

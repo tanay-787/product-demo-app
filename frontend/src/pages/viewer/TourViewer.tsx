@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react"
-import { useParams } from "react-router-dom"
+import { useParams } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query"
 import api from "@/lib/api"
 import { useUser } from "@stackframe/react"
@@ -7,9 +7,9 @@ import TourPreview from "../editor/TourPreview"
 import type { Annotation, TourStep } from "../editor/ProductTourEditor"
 import { Button } from "@/components/ui/button"
 import { ArrowLeft, ArrowRight } from "lucide-react"
-import { motion, AnimatePresence } from "motion/react"
 import { Toaster } from "@/components/ui/sonner"
 import { toast } from "sonner"
+import { motion, AnimatePresence } from "motion/react"
 
 interface TourData {
   id: string
@@ -38,13 +38,32 @@ export default function TourViewer() {
         throw new Error("Tour ID is missing.")
       }
       const authHeaders = user ? await user.getAuthHeaders() : {}
-      const response = await api.get<TourData>(`/api/view/${tourId}`, { headers: authHeaders })
-      // Sort steps by stepOrder when fetched
-      response.data.tourSteps.sort((a, b) => (a.stepOrder || 0) - (b.stepOrder || 0))
+      // FIX: Changed `/api/view/${tourId}` to `/view/${tourId}` to avoid double `/api/api/`
+      const response = await api.get<TourData>(`/view/${tourId}`, { headers: authHeaders })
+      
+      // Debugging: Log the raw response data
+      console.log("Raw tour data from backend (TourViewer):", response.data);
+
+      // Ensure tourSteps is an array before sorting
+      if (response.data.tourSteps && Array.isArray(response.data.tourSteps)) {
+        response.data.tourSteps.sort((a, b) => (a.stepOrder || 0) - (b.stepOrder || 0))
+      } else {
+        console.warn("tourSteps is not an array or is missing from backend response:", response.data.tourSteps);
+        response.data.tourSteps = []; // Ensure it's an empty array to prevent sort errors
+      }
+      
       return response.data
     },
     enabled: !!tourId,
   })
+
+  // Debugging: Log the tour object after useQuery
+  useEffect(() => {
+    if (tour) {
+      console.log("Tour object in TourViewer (after query):", tour);
+      console.log("Tour steps in TourViewer (after query):", tour.tourSteps);
+    }
+  }, [tour]);
 
   const currentStep = tour?.tourSteps[currentStepIndex]
 
@@ -130,6 +149,7 @@ export default function TourViewer() {
               imageUrl={currentStep?.imageUrl || null}
               videoUrl={currentStep?.videoUrl || null} // Pass videoUrl here
               annotations={currentStep?.annotations || []}
+              // onUpdateAnnotationPosition and onDeleteAnnotation are optional, so no need to pass them
             />
           </motion.div>
         </AnimatePresence>

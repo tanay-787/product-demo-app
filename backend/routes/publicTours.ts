@@ -27,7 +27,9 @@ router.get('/:id', async (req, res, next) => {
 
     res.json(tour);
   } catch (error) {
-    next(error);
+    // Ensure all errors are sent as JSON
+    console.error("Error in publicTours route:", error);
+    res.status(500).json({ error: (error as Error).message || 'An unexpected error occurred.' });
   }
 });
 

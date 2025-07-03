@@ -15,22 +15,26 @@ const PORT = process.env.PORT || 3000
 app.use(cors())
 app.use(express.json())
 
-// Serve static files from the frontend's dist directory
-app.use(express.static(path.join(__dirname, '..', '..', 'frontend', 'dist')))
-
-// API Routes
+// 1. All API Routes (MUST come before serving static files or fallback)
 app.use("/api/tours", authMiddleware, toursRouter)
 app.use("/api/view", publicToursRouter) // Public routes for viewing tours
 app.use("/api/analytics", analyticsRouter)
 app.use("/api/insights", authMiddleware, insightsRouter)
 app.use("/api/media", authMiddleware, mediaRouter)
 
-// Health check
+// Health check (also an API endpoint)
 app.get("/api/health", (req, res) => {
   res.json({ status: "OK", timestamp: new Date().toISOString() })
 })
 
-// Fallback for client-side routing (must be after all API routes)
+// 2. Serve static files from the frontend's dist directory
+// This middleware will serve files like index.html, CSS, JS, etc.
+// It should be placed after API routes to prevent it from intercepting API calls.
+app.use(express.static(path.join(__dirname, '..', '..', 'frontend', 'dist')))
+
+// 3. Fallback for client-side routing (MUST be the LAST route definition)
+// For any request that didn't match an API route or a static file,
+// serve the main index.html to allow client-side routing (React Router) to take over.
 app.get("*", (req, res) => {
   res.sendFile(path.join(__dirname, '..', '..', 'frontend', 'dist', 'index.html'))
 })

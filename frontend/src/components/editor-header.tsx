@@ -26,7 +26,7 @@ interface EditorHeaderProps {
   currentTourTitle?: string
   onSave?: () => void
   onPreview?: () => void
-  onShare?: () => void
+  onShareClick?: () => void // Added this new prop
   isSaving?: boolean
 }
 
@@ -35,7 +35,7 @@ export function EditorHeader({
   currentTourTitle = "Untitled Tour",
   onSave,
   onPreview,
-  onShare,
+  onShareClick,
   isSaving = false,
 }: EditorHeaderProps) {
   const navigate = useNavigate()
@@ -138,11 +138,7 @@ export function EditorHeader({
 
         {/* Right Section */}
         <div className="flex items-center gap-2">
-          <Button variant="outline" size="sm" onClick={onPreview} className="gap-2 bg-transparent">
-            <Eye className="w-4 h-4" />
-            Preview
-          </Button>
-          <Button variant="outline" size="sm" onClick={onShare} className="gap-2 bg-transparent">
+          <Button variant="outline" size="sm" onClick={onShareClick} className="gap-2 bg-transparent">
             <Share2 className="w-4 h-4" />
             Share
           </Button>

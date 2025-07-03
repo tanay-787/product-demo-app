@@ -8,6 +8,7 @@ import ResourceUploader from "@/components/resource-uploader"
 import TourStepManager from "./TourStepManager"
 import TourPreview from "./TourPreview"
 import AnnotationTool from "./AnnotationTool"
+import PublishControls from "./PublishControls" // Import PublishControls
 import { useUser } from "@stackframe/react"
 import { Label } from "@/components/ui/label"
 import { Button } from "@/components/ui/button"
@@ -20,6 +21,13 @@ import { arrayMove } from "@dnd-kit/sortable"
 import { Separator } from "@/components/ui/separator"
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { ResizableHandle, ResizablePanel, ResizablePanelGroup } from "@/components/ui/resizable"
+import { 
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle
+} from "@/components/ui/dialog" // Import Dialog components
 
 export interface Annotation {
   id?: string
@@ -59,6 +67,7 @@ const ProductTourEditor: React.FC = () => {
   const [selectedStepIndex, setSelectedStepIndex] = useState<number>(0)
   const [direction, setDirection] = useState(0)
   const [tourCurrentStatus, setTourCurrentStatus] = useState<"draft" | "published" | "private">("draft")
+  const [isPublishControlsOpen, setIsPublishControlsOpen] = useState(false) // New state for PublishControls dialog
 
   const {
     data: fetchedTour,
@@ -328,6 +337,20 @@ const ProductTourEditor: React.FC = () => {
     }
   }
 
+  const handleUpdateTourStatus = async (newStatus: "draft" | "published" | "private") => {
+    if (!user || !tourId) return;
+    try {
+      const authHeaders = await user.getAuthHeaders();
+      await api.patch(`/tours/${tourId}/status`, { status: newStatus }, { headers: authHeaders });
+      setTourCurrentStatus(newStatus);
+      queryClient.invalidateQueries({ queryKey: ["tour", tourId] });
+      queryClient.invalidateQueries({ queryKey: ["tours"] }); // Invalidate tour list to update status there too
+    } catch (error) {
+      console.error("Failed to update tour status:", error);
+      alert("Failed to update tour status.");
+    }
+  };
+
   const variants = {
     enter: (direction: number) => ({
       x: direction > 0 ? 1000 : -1000,
@@ -369,6 +392,10 @@ const ProductTourEditor: React.FC = () => {
         currentTourTitle={tourTitle || "Untitled Tour"}
         onSave={handleSaveTour}
         isSaving={saveTourMutation.isPending}
+        onShareClick={() => {
+          console.log("Share button in EditorHeader clicked!"); // <-- Added/Confirmed this log
+          setIsPublishControlsOpen(true);
+        }} // Open dialog on share button click
       />
 
       {/* Tour Details - Compact Header */}
@@ -441,18 +468,19 @@ const ProductTourEditor: React.FC = () => {
                     </motion.div>
                   </AnimatePresence>
 
+                    {/* Tour Description below preview */}
                   {currentStep?.description && (
-                    <motion.div
-                      initial={{ opacity: 0, y: 20 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      className="absolute bottom-3 left-1/2 -translate-x-1/2 bg-popover text-popover-foreground p-2 rounded-md max-w-xs text-xs text-center shadow-lg z-10 border"
-                    >
-                      {currentStep.description}
-                    </motion.div>
+                      <motion.div
+                          initial={{ opacity: 0, y: 20 }}
+                          animate={{ opacity: 1, y: 0 }}
+                          className="absolute bottom-3 left-1/2 -translate-x-1/2 bg-popover text-popover-foreground p-2 rounded-md max-w-xs text-xs text-center shadow-lg z-10 border"
+                      >
+                          {currentStep.description}
+                      </motion.div>
                   )}
                 </div>
 
-                {/* Navigation */}
+                  {/* Navigation */}
                 <div className="flex justify-between items-center mt-3 pt-3 border-t border-border">
                   <Button
                     onClick={handlePreviousStepInEditor}
@@ -478,7 +506,7 @@ const ProductTourEditor: React.FC = () => {
                   </Button>
                 </div>
               </div>
-            </div>
+            </div> {/* <-- Added the missing closing div here */} 
           </ResizablePanel>
 
           <ResizableHandle />
@@ -493,49 +521,67 @@ const ProductTourEditor: React.FC = () => {
               <ScrollArea className="flex-1">
                 <div className="p-3 space-y-3">
                   {currentStep && (
-                    <>
-                      {/* Step Description */}
-                      <div>
-                        <Label htmlFor="step-description" className="text-xs font-medium">
-                          Description
-                        </Label>
-                        <Textarea
-                          id="step-description"
-                          value={currentStep.description}
-                          onChange={handleStepDescriptionChange}
-                          placeholder="Describe this step..."
-                          rows={2}
-                          className="mt-1 text-xs"
-                        />
-                      </div>
+                      <>
+                        {/* Step Description */}
+                        <div>
+                          <Label htmlFor="step-description" className="text-xs font-medium">
+                            Description
+                          </Label>
+                          <Textarea
+                            id="step-description"
+                            value={currentStep.description}
+                            onChange={handleStepDescriptionChange}
+                            placeholder="Describe this step..."
+                            rows={2}
+                            className="mt-1 text-xs"
+                          />
+                        </div>
 
-                      <Separator />
+                        <Separator />
 
-                      {/* Resource Upload */}
-                      <div>
-                        <Label className="text-xs font-medium mb-2 block">Media</Label>
-                        <ResourceUploader
-                          onResourceUpload={handleResourceUpload}
-                          currentResourceUrl={currentStep.imageUrl || currentStep.videoUrl}
-                          currentResourceType={currentStep.imageUrl ? "image" : currentStep.videoUrl ? "video" : null}
-                        />
-                      </div>
+                        {/* Resource Upload */}
+                        <div>
+                          <Label className="text-xs font-medium mb-2 block">Media</Label>
+                          <ResourceUploader
+                            onResourceUpload={handleResourceUpload}
+                            currentResourceUrl={currentStep.imageUrl || currentStep.videoUrl}
+                            currentResourceType={currentStep.imageUrl ? "image" : currentStep.videoUrl ? "video" : null}
+                          />
+                        </div>
 
-                      <Separator />
+                        <Separator />
 
-                      {/* Annotations */}
-                      <div>
-                        <Label className="text-xs font-medium mb-2 block">Add Annotation</Label>
-                        <AnnotationTool onAddAnnotation={handleAddAnnotation} />
-                      </div>
-                    </>
-                  )}
-                </div>
-              </ScrollArea>
-            </div>
-          </ResizablePanel>
-        </ResizablePanelGroup>
-      </div>
+                        {/* Annotations */}
+                        <div>
+                          <Label className="text-xs font-medium mb-2 block">Add Annotation</Label>
+                          <AnnotationTool onAddAnnotation={handleAddAnnotation} />
+                        </div>
+                      </>
+                    )}
+                  </div>
+                </ScrollArea>
+                
+              </div>
+            </ResizablePanel>
+          </ResizablePanelGroup>
+        </div>
+
+      {/* Publish Controls Dialog - Correctly placed as an overlay */}
+      <Dialog open={isPublishControlsOpen} onOpenChange={setIsPublishControlsOpen}>
+        <DialogContent className="sm:max-w-[500px]">
+          <DialogHeader>
+            <DialogTitle>Publish & Share Tour</DialogTitle>
+            <DialogDescription>
+              Control your tour's visibility and get shareable links.
+            </DialogDescription>
+          </DialogHeader>
+          <PublishControls 
+            tourId={tourId}
+            initialStatus={tourCurrentStatus}
+            onStatusChange={handleUpdateTourStatus}
+          />
+        </DialogContent>
+      </Dialog>
     </div>
   )
 }
