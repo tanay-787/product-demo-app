@@ -6,7 +6,7 @@ import { useQuery } from "@tanstack/react-query"
 import { useUser } from "@stackframe/react"
 import { useNavigate } from "react-router-dom"
 import api from "@/lib/api"
-import { Plus, Eye, Edit, Share2, BarChart3, Users, TrendingUp, Clock } from "lucide-react"
+import { Plus, BarChart3, Users, TrendingUp, Clock, EyeIcon } from "lucide-react"
 import { motion } from "motion/react"
 
 interface Tour {
@@ -73,14 +73,6 @@ export default function DashboardOverview() {
 
   const handleViewAllTours = () => {
     navigate("/dashboard/tours")
-  }
-
-  const handleEditTour = (tourId: string) => {
-    navigate(`/editor?tourId=${tourId}`)
-  }
-
-  const handleViewTour = (tourId: string) => {
-    navigate(`/viewer/${tourId}`)
   }
 
   const getStatusColor = (status: string) => {
@@ -178,7 +170,7 @@ export default function DashboardOverview() {
             <CardHeader className="pb-3">
               <CardTitle className="text-sm font-medium flex items-center gap-2">
                 <div className="p-2 bg-green-500/10 rounded-lg">
-                  <Eye className="w-4 h-4 text-green-500" />
+                  <EyeIcon className="w-4 h-4 text-green-500" />
                 </div>
                 Total Views
               </CardTitle>
@@ -248,45 +240,37 @@ export default function DashboardOverview() {
                 </Button>
               </div>
             ) : (
-              <div className="space-y-4">
-                {recentTours.map((tour, index) => (
-                  <motion.div
-                    key={tour.id}
-                    initial={{ opacity: 0, x: -20 }}
-                    animate={{ opacity: 1, x: 0 }}
-                    transition={{ delay: index * 0.1 }}
-                    className="flex items-center justify-between p-4 border rounded-lg hover:bg-muted/50 transition-colors"
-                  >
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-2 mb-1">
-                        <h3 className="font-medium truncate">{tour.title}</h3>
-                        <Badge variant="outline" className={getStatusColor(tour.status)}>
-                          {tour.status}
-                        </Badge>
-                      </div>
-                      <p className="text-sm text-muted-foreground truncate">{tour.description || "No description"}</p>
-                      <div className="flex items-center gap-4 mt-2 text-xs text-muted-foreground">
-                        <span>Updated {formatDate(tour.updatedAt)}</span>
-                        {tour.stepCount && <span>{tour.stepCount} steps</span>}
-                        {tour.viewCount && <span>{tour.viewCount} views</span>}
-                      </div>
-                    </div>
-                    <div className="flex items-center gap-2 ml-4">
-                      <Button variant="ghost" size="sm" onClick={() => handleViewTour(tour.id)} className="gap-1">
-                        <Eye className="w-3 h-3" />
-                        View
-                      </Button>
-                      <Button variant="ghost" size="sm" onClick={() => handleEditTour(tour.id)} className="gap-1">
-                        <Edit className="w-3 h-3" />
-                        Edit
-                      </Button>
-                      <Button variant="ghost" size="sm" className="gap-1">
-                        <Share2 className="w-3 h-3" />
-                        Share
-                      </Button>
-                    </div>
-                  </motion.div>
-                ))}
+              <div className="overflow-x-auto">
+                <table className="min-w-full bg-background border border-border rounded-md overflow-hidden">
+                  <thead>
+                    <tr className="bg-muted/50">
+                      <th className="py-3 px-4 border-b border-border text-left text-sm font-medium text-muted-foreground">Title</th>
+                      <th className="py-3 px-4 border-b border-border text-left text-sm font-medium text-muted-foreground">Status</th>
+                      <th className="py-3 px-4 border-b border-border text-left text-sm font-medium text-muted-foreground">Description</th>
+                      <th className="py-3 px-4 border-b border-border text-left text-sm font-medium text-muted-foreground">Updated</th>
+                      <th className="py-3 px-4 border-b border-border text-left text-sm font-medium text-muted-foreground">Steps</th>
+                      <th className="py-3 px-4 border-b border-border text-left text-sm font-medium text-muted-foreground">Views</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {recentTours.map((tour, index) => (
+                      <tr key={tour.id} className="border-b border-border hover:bg-muted/20 last:border-b-0">
+                        <td className="py-2 px-4 text-foreground font-medium">{tour.title}</td>
+                        <td className="py-2 px-4">
+                          <Badge variant="outline" className={getStatusColor(tour.status)}>
+                            {tour.status}
+                          </Badge>
+                        </td>
+                        <td className="py-2 px-4 text-muted-foreground text-sm truncate max-w-[200px]">
+                          {tour.description || "No description"}
+                        </td>
+                        <td className="py-2 px-4 text-muted-foreground text-sm">{formatDate(tour.updatedAt)}</td>
+                        <td className="py-2 px-4 text-muted-foreground text-sm">{tour.stepCount || 'N/A'}</td>
+                        <td className="py-2 px-4 text-muted-foreground text-sm">{tour.viewCount || 'N/A'}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
               </div>
             )}
           </CardContent>

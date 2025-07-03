@@ -20,7 +20,7 @@ import {
   useSortable,
 } from "@dnd-kit/sortable"
 import { CSS } from "@dnd-kit/utilities"
-import type { TourStep } from "./ProductTourEditor"
+import type { TourStep } from "./product-tour-editor"
 
 interface TourStepManagerProps {
   tourSteps: TourStep[]

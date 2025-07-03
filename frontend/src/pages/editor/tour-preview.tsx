@@ -4,7 +4,7 @@ import React, { useState, useRef } from "react"
 import { Button } from "@/components/ui/button"
 import { X, Move } from "lucide-react"
 import { cn } from "@/lib/utils"
-import type { Annotation } from "./ProductTourEditor"
+import type { Annotation } from "./product-tour-editor"
 
 interface TourPreviewProps {
   imageUrl: string | null
