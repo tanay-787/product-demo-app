@@ -5,6 +5,7 @@ import dotenv from "dotenv"
 import { authMiddleware } from "./middleware/auth"
 import toursRouter from "./routes/tours"
 import publicToursRouter from "./routes/publicTours"
+import analyticsRouter from "./routes/analytics"
 
 dotenv.config()
 
@@ -22,7 +23,7 @@ app.get("/health", (req, res) => {
 })
 
 // Public routes
-app.use("/view", publicToursRouter)
+
 
 // Mock Analytics endpoint
 app.post("/api/analytics", (req, res) => {
@@ -32,8 +33,8 @@ app.post("/api/analytics", (req, res) => {
 });
 
 app.use("/api", authMiddleware)
-
-
+app.use("/api/analytics", analyticsRouter)
+app.use("/api/view", publicToursRouter)
 app.use("/api/tours", toursRouter)
 
 // Error handling middleware

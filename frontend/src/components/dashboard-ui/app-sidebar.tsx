@@ -15,7 +15,10 @@ import {
   Container,
   Code,
   Terminal,
-  ChartNoAxesGantt
+  ChartNoAxesGantt,
+  LayoutDashboard,
+  ChartColumn,
+  Users
 } from "lucide-react"
 
 import { NavMain } from '@/components/dashboard-ui/nav-main'
@@ -33,50 +36,20 @@ import {
 const data = {
   navMain: [
     {
-      title: "Overview",
-      url: "/projects",
+      title: "Tours",
+      url: "/tours",
       icon: ChartNoAxesGantt,
       isActive: true,
     },
     {
-      title: "Projects",
-      url: "#",
-      icon: Container,
-      items: [
-        {
-          title: "Cleat Central",
-          url: "/projects/1234",
-          icon: Terminal
-        },
-        {
-          title: "QPAS",
-          url: "#",
-          icon: Terminal
-        },
-        {
-          title: "ResAnalyzer",
-          url: "#",
-          icon: Terminal
-        },
-      ],
+      title: "Insights",
+      url: "/insights",
+      icon: ChartColumn,
     },
     {
-      title: "Manage Settings",
+      title: "Shared With Me",
       url: "#",
-      icon: Settings2,
-      // items: [
-      //   {
-      //     title: "General",
-      //     url: "#",
-      //   },
-      //   {
-      //     title: "Billing",
-      //     url: "#",
-      //   },
-      //   {
-      //     title: "Limits",
-      //   },
-      // ],
+      icon: Users,
     },
   ],
   navSecondary: [
@@ -113,8 +86,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
                   <Command className="size-4" />
                 </div>
                 <div className="grid flex-1 text-left text-sm leading-tight">
-                  <span className="truncate font-semibold">BaseStack</span>
-                  <span className="truncate text-xs">Dashboard</span>
+                  <span className="truncate font-semibold">Tourify</span>
                 </div>
                 </div>
             </SidebarMenuButton>

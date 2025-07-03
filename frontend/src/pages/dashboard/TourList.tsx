@@ -25,7 +25,6 @@ const TourList: React.FC = () => {
         throw new Error("User not authenticated.");
       }
       const authHeaders = await user.getAuthHeaders();
-      const { accessToken } = await user.getAuthJson();
       const response = await api.get<Tour[]>('/tours', { headers: authHeaders });
       return response.data;
     },
