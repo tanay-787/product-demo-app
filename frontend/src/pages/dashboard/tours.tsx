@@ -98,7 +98,7 @@ export default function ToursPage() {
     }
   }
 
-  const handleShareTour = async (tourId: string) => {
+  const handleCopyShareLink = async (tourId: string) => {
     if (!user) {
       alert("User not authenticated to share tour.")
       return
@@ -118,6 +118,11 @@ export default function ToursPage() {
       alert("Failed to get share link. Please try again.")
     }
   }
+
+  // New function to open PublishControls by navigating to editor
+  const handleOpenPublishControls = (tourId: string) => {
+    navigate(`/editor?tourId=${tourId}`);
+  };
 
   const getStatusColor = (status: string) => {
     switch (status) {
@@ -288,10 +293,10 @@ export default function ToursPage() {
                             <Edit className="w-4 h-4 mr-2" />
                             Edit Tour
                           </DropdownMenuItem>
-                          <DropdownMenuItem onClick={() => handleShareTour(tour.id)}>
+                          {/* <DropdownMenuItem onClick={() => handleCopyShareLink(tour.id)}>
                             <Copy className="w-4 h-4 mr-2" />
                             Copy Link
-                          </DropdownMenuItem>
+                          </DropdownMenuItem> */}
                           <DropdownMenuItem
                             onClick={() => handleDeleteTour(tour.id, tour.title)}
                             className="text-destructive focus:text-destructive"
@@ -325,24 +330,15 @@ export default function ToursPage() {
                       <Button
                         variant="outline"
                         size="sm"
-                        onClick={() => handleViewTour(tour.id)}
-                        className="flex-1 gap-1"
-                      >
-                        <Eye className="w-3 h-3" />
-                        View
-                      </Button>
-                      <Button
-                        variant="outline"
-                        size="sm"
                         onClick={() => handleEditTour(tour.id)}
                         className="flex-1 gap-1"
                       >
                         <Edit className="w-3 h-3" />
                         Edit
                       </Button>
-                      <Button variant="outline" size="sm" onClick={() => handleShareTour(tour.id)} className="gap-1">
+                      {/* <Button variant="outline" size="sm" onClick={() => handleOpenPublishControls(tour.id)} className="gap-1">
                         <Share2 className="w-3 h-3" />
-                      </Button>
+                      </Button> */}
                     </div>
                   </CardContent>
                 </Card>
