@@ -8,10 +8,10 @@ import type { Annotation } from "./ProductTourEditor"
 
 interface TourPreviewProps {
   imageUrl: string | null
-  videoUrl: string | null // Added videoUrl
+  videoUrl: string | null
   annotations: Annotation[]
-  onUpdateAnnotationPosition: (annotationId: string, newX: number, newY: number) => void
-  onDeleteAnnotation: (annotationId: string) => void
+  onUpdateAnnotationPosition?: (annotationId: string, newX: number, newY: number) => void // Made optional
+  onDeleteAnnotation?: (annotationId: string) => void // Made optional
 }
 
 interface DraggableAnnotationProps {
@@ -133,8 +133,8 @@ export default function TourPreview({
             <DraggableAnnotation
               key={annotation.id}
               annotation={annotation}
-              onUpdatePosition={(newX, newY) => onUpdateAnnotationPosition(annotation.id!, newX, newY)}
-              onDelete={() => onDeleteAnnotation(annotation.id!)}
+              onUpdatePosition={(newX, newY) => onUpdateAnnotationPosition!(annotation.id!, newX, newY)} // Added non-null assertion
+              onDelete={() => onDeleteAnnotation!(annotation.id!)} // Added non-null assertion
               containerRef={containerRef}
             />
           ))}

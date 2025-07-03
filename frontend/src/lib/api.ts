@@ -1,10 +1,9 @@
-import axios from 'axios';
+import axios from "axios"
 
+// Configure axios to point to the backend API
+// When served from the same origin, a relative path is sufficient
 const api = axios.create({
-  baseURL: '/api', // This will be proxied to http://localhost:3000 by Vite
-  headers: {
-    'Content-Type': 'application/json',
-  },
-});
+  baseURL: "/api",
+})
 
-export default api;
+export default api
