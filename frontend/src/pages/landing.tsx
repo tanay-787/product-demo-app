@@ -32,11 +32,8 @@ const LandingPage: React.FC = () => {
   const y = useTransform(scrollYProgress, [0, 1], ["0%", "50%"])
 
   const handleGetStarted = () => {
-    if (user) {
+      useUser({ or: "redirect" })
       navigate("/dashboard")
-    } else {
-      navigate("/handler/sign")
-    }
   }
 
   const features = [
