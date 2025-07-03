@@ -1,9 +1,10 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { useParams } from 'react-router-dom';
+import { Link, useParams } from 'react-router-dom';
 import { type TourStep, type Annotation } from '../editor/ProductTourEditor';
 import TourPreview from '../editor/TourPreview';
 import { Button } from '@/components/ui/button';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion, AnimatePresence } from 'motion/react';
+import { useUser } from '@stackframe/react'; // Import useUser
 
 interface TourData {
   id: string;
@@ -19,6 +20,7 @@ const TourViewer: React.FC = () => {
   const [currentStepIndex, setCurrentStepIndex] = useState<number>(0);
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
+  const user = useUser(); // Get user session (null if not logged in)
 
   // Function to send analytics events
   const trackEvent = useCallback(async (event: string, data: Record<string, any>) => {
@@ -48,8 +50,7 @@ const TourViewer: React.FC = () => {
         setIsLoading(true);
         setError(null);
         try {
-          // Fetch from public view endpoint (no auth)
-          const response = await fetch(`/view/${tourId}`);
+          const response = await fetch(`/view/${tourId}`); // Fetch from public view endpoint
           if (!response.ok) {
             const errorData = await response.json();
             throw new Error(errorData.error || `HTTP error! status: ${response.status}`);
@@ -172,7 +173,24 @@ const TourViewer: React.FC = () => {
             Next
           </Button>
         </div>
+
+        {user && (
+          <div className="mt-8 text-center">
+            <p className="text-muted-foreground mb-4">Want to create your own interactive tours?</p>
+            <div className="flex justify-center space-x-4">
+              <Link to="/projects">
+                <Button>Go to Dashboard</Button>
+              </Link>
+              <Link to="/editor">
+                <Button variant="outline">Create New Tour</Button>
+              </Link>
+            </div>
+          </div>
+        )}
       </div>
+      <footer className="mt-8 text-center text-sm text-gray-500 dark:text-gray-400">
+        Powered by Miniature Full-Stack Collaborative Product Demo Platform
+      </footer>
     </div>
   );
 };

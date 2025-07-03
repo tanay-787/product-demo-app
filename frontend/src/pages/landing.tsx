@@ -1,9 +1,7 @@
 import React from "react";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Separator } from "@/components/ui/separator";
 import { useNavigate } from "react-router-dom";
 import { useUser } from "@stackframe/react";
+import { Button } from "@/components/ui/button"; // Assuming Button component exists
 
 const LandingPage: React.FC = () => {
   const user = useUser()
@@ -18,57 +16,23 @@ const LandingPage: React.FC = () => {
   };
 
   return (
-    <div className="">
-      <section className="text-center mb-16">
-        <h1 className="text-4xl md:text-6xl font-bold mb-4">
-          Instantly Generate Modern Backend Boilerplates
-        </h1>
-        <p className="text-xl text-muted-foreground mb-8">
-          Say goodbye to tedious setup and focus on building your application.
-        </p>
-        <Button size="lg" onClick={handleGetStarted}>Get Started</Button>
-      </section>
+    <div className="flex flex-col items-center justify-center min-h-[calc(100vh-64px)] text-center px-4 py-12 bg-gradient-to-br from-blue-500 to-purple-600 text-white">
+      <h1 className="text-5xl md:text-7xl font-extrabold tracking-tight leading-tight mb-6">
+        Create Stunning Product Demos. Effortlessly.
+      </h1>
+      <p className="text-lg md:text-xl max-w-2xl mb-10 opacity-90">
+        Turn your product features into interactive stories. Engage users, accelerate sales, and simplify onboarding with powerful, visual demos.
+      </p>
+      <Button
+        onClick={handleGetStarted}
+        className="bg-white text-blue-600 hover:bg-gray-100 px-8 py-4 rounded-full text-lg font-semibold shadow-lg transition-all duration-300 transform hover:scale-105"
+      >
+        Get Started for Free
+      </Button>
 
-      <Separator className="my-12" />
-
-      <section className="mb-16">
-        <h2 className="text-3xl md:text-4xl font-bold text-center mb-10">
-          Key Features
-        </h2>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-          <Card>
-            <CardHeader>
-              <CardTitle>Flexible Stack Selection</CardTitle>
-            </CardHeader>
-            <CardContent>
-              Choose your preferred technologies to build your backend.
-            </CardContent>
-          </Card>
-          <Card>
-            <CardHeader>
-              <CardTitle>Intuitive Data Modeling</CardTitle>
-            </CardHeader>
-            <CardContent>
-              Easily define your data models and API endpoints.
-            </CardContent>
-          </Card>
-          <Card>
-            <CardHeader>
-              <CardTitle>Comprehensive Output</CardTitle>
-            </CardHeader>
-            <CardContent>
-              Receive production-ready code with validation, Dockerfiles, and deployment configurations.
-            </CardContent>
-          </Card>
-        </div>
-      </section>
-
-      <Separator className="my-12" />
-
-      <section className="text-center">
-        <h2 className="text-3xl md:text-4xl font-bold mb-6">Ready to build faster?</h2>
-        <Button size="lg" onClick={handleGetStarted}>Start Generating</Button>
-      </section>
+      <div className="mt-16 text-sm opacity-80">
+        <p>Inspired by platforms like Arcade.</p>
+      </div>
     </div>
   );
 };

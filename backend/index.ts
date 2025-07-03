@@ -21,20 +21,19 @@ app.get("/health", (req, res) => {
   res.json({ status: "OK", timestamp: new Date().toISOString() })
 })
 
-// Public routes (no authentication required)
+// Public routes
 app.use("/view", publicToursRouter)
 
-// Mock Analytics endpoint (no authentication required for simplicity in mock)
+// Mock Analytics endpoint
 app.post("/api/analytics", (req, res) => {
   const { event, tourId, stepIndex, timestamp } = req.body;
   console.log(`[ANALYTICS EVENT] Type: ${event}, Tour ID: ${tourId}, Step: ${stepIndex}, Time: ${timestamp}`);
   res.status(200).json({ message: "Analytics event received" });
 });
 
-// Protected routes
 app.use("/api", authMiddleware)
 
-// Add tour routes under /api/tours, protected by authMiddleware
+
 app.use("/api/tours", toursRouter)
 
 // Error handling middleware

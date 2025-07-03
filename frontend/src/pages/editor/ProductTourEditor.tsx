@@ -9,7 +9,9 @@ import { useUser } from '@stackframe/react';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Button } from '@/components/ui/button';
-import { useSearchParams } from 'react-router-dom'; // Import useSearchParams
+import { useSearchParams } from 'react-router-dom';
+import { Textarea } from '@/components/ui/textarea';
+import { motion, AnimatePresence } from 'motion/react';
 
 export interface Annotation {
   id: string;
@@ -23,7 +25,7 @@ export interface TourStep {
   imageUrl: string | null;
   description: string;
   annotations: Annotation[];
-  stepOrder?: number; // Optional as it might not be present when creating a new step client-side
+  stepOrder?: number;
 }
 
 const ProductTourEditor: React.FC = () => {
@@ -41,8 +43,9 @@ const ProductTourEditor: React.FC = () => {
   const [saveSuccess, setSaveSuccess] = useState<boolean>(false);
   const [isLoadingTour, setIsLoadingTour] = useState<boolean>(false);
   const [loadTourError, setLoadTourError] = useState<string | null>(null);
+  const [direction, setDirection] = useState(0);
+  const [tourCurrentStatus, setTourCurrentStatus] = useState<'draft' | 'published' | 'private'>('draft'); // New state for tour status
 
-  // Effect to load tour data if tourId is present in the URL
   useEffect(() => {
     if (urlTourId) {
       const fetchTour = async () => {
@@ -59,10 +62,10 @@ const ProductTourEditor: React.FC = () => {
           setTourId(data.id);
           setTourTitle(data.title);
           setTourDescription(data.description || '');
-          // Ensure steps are ordered and have client-side IDs if not already from DB
           const sortedSteps = data.tourSteps.sort((a: TourStep, b: TourStep) => (a.stepOrder || 0) - (b.stepOrder || 0));
           setTourSteps(sortedSteps.map((step: TourStep) => ({ ...step, id: step.id || Date.now().toString() })));
           setSelectedStepIndex(0);
+          setTourCurrentStatus(data.status); // Set tour status from fetched data
         } catch (e: any) {
           console.error('Error loading tour:', e);
           setLoadTourError(e.message);
@@ -72,31 +75,30 @@ const ProductTourEditor: React.FC = () => {
       };
       fetchTour();
     } else {
-      // If no tourId, initialize with one empty step for new tour creation
       if (tourSteps.length === 0) {
         handleAddStep();
       }
+      setTourCurrentStatus('draft'); // Default to draft for new tours
     }
   }, [urlTourId]);
 
-  // Initialize with one empty step if no steps exist and not loading a tour
   useEffect(() => {
     if (!urlTourId && tourSteps.length === 0) {
       handleAddStep();
     }
-  }, [urlTourId, tourSteps]); // Add tourSteps as dependency to ensure it runs only if steps are truly empty
+  }, [urlTourId, tourSteps]);
 
   const currentStep = tourSteps[selectedStepIndex];
 
   const handleAddStep = () => {
     const newStep: TourStep = {
-      id: Date.now().toString(), // Client-side ID for now, will be replaced by DB ID on save
+      id: Date.now().toString(),
       imageUrl: null,
       description: '',
       annotations: [],
     };
     setTourSteps((prevSteps) => [...prevSteps, newStep]);
-    setSelectedStepIndex(tourSteps.length); // Select the newly added step
+    setSelectedStepIndex(tourSteps.length); 
   };
 
   const handleDeleteStep = (index: number) => {
@@ -106,13 +108,15 @@ const ProductTourEditor: React.FC = () => {
     }
     setTourSteps((prevSteps) => prevSteps.filter((_, i) => i !== index));
     if (selectedStepIndex === index) {
-      setSelectedStepIndex(Math.max(0, index - 1)); // Select previous step or first step
+      setSelectedStepIndex(Math.max(0, index - 1));
     } else if (selectedStepIndex > index) {
-      setSelectedStepIndex(selectedStepIndex - 1); // Adjust index if a preceding step was deleted
+      setSelectedStepIndex(selectedStepIndex - 1);
     }
   };
 
   const handleSelectStep = (index: number) => {
+    if (index > selectedStepIndex) setDirection(1);
+    else setDirection(-1);
     setSelectedStepIndex(index);
   };
 
@@ -120,7 +124,18 @@ const ProductTourEditor: React.FC = () => {
     setTourSteps((prevSteps) =>
       prevSteps.map((step, idx) =>
         idx === selectedStepIndex
-          ? { ...step, imageUrl, annotations: [] } // Clear annotations when new image is uploaded
+          ? { ...step, imageUrl, annotations: [] }
+          : step
+      )
+    );
+  };
+
+  const handleStepDescriptionChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
+    const newDescription = e.target.value;
+    setTourSteps((prevSteps) =>
+      prevSteps.map((step, idx) =>
+        idx === selectedStepIndex
+          ? { ...step, description: newDescription }
           : step
       )
     );
@@ -128,7 +143,7 @@ const ProductTourEditor: React.FC = () => {
 
   const handleAddAnnotation = (text: string, x: number, y: number) => {
     const newAnnotation: Annotation = {
-      id: Date.now().toString(), // Client-side ID for now
+      id: Date.now().toString(),
       text,
       x,
       y,
@@ -142,13 +157,41 @@ const ProductTourEditor: React.FC = () => {
     );
   };
 
-  const handleMoveStep = (index: number, direction: 'up' | 'down') => {
+  const handleUpdateAnnotationPosition = (annotationId: string, newX: number, newY: number) => {
+    setTourSteps((prevSteps) =>
+      prevSteps.map((step, idx) =>
+        idx === selectedStepIndex
+          ? {
+              ...step,
+              annotations: step.annotations.map((ann) =>
+                ann.id === annotationId ? { ...ann, x: newX, y: newY } : ann
+              ),
+            }
+          : step
+      )
+    );
+  };
+
+  const handleDeleteAnnotation = (annotationId: string) => {
+    setTourSteps((prevSteps) =>
+      prevSteps.map((step, idx) =>
+        idx === selectedStepIndex
+          ? {
+              ...step,
+              annotations: step.annotations.filter((ann) => ann.id !== annotationId),
+            }
+          : step
+      )
+    );
+  };
+
+  const handleMoveStep = (index: number, moveDirection: 'up' | 'down') => {
     setTourSteps((prevSteps) => {
       const newSteps = [...prevSteps];
       const [movedStep] = newSteps.splice(index, 1);
-      const newIndex = direction === 'up' ? index - 1 : index + 1;
+      const newIndex = moveDirection === 'up' ? index - 1 : index + 1;
       newSteps.splice(newIndex, 0, movedStep);
-      setSelectedStepIndex(newIndex); // Select the moved step
+      setSelectedStepIndex(newIndex);
       return newSteps;
     });
   };
@@ -179,14 +222,13 @@ const ProductTourEditor: React.FC = () => {
         body: JSON.stringify({
           title: tourTitle,
           description: tourDescription,
-          status: 'draft', // Default status when saving
+          status: tourCurrentStatus, // Use the current tour status from state
           steps: tourSteps.map((step, index) => ({
-            // For PUT, include existing DB IDs if available, for POST, new IDs will be generated
-            id: step.id.includes('-') ? undefined : step.id, // Only send DB IDs to backend for existing steps
+            id: step.id.includes('-') ? undefined : step.id,
             imageUrl: step.imageUrl,
             description: step.description,
-            stepOrder: index, // Ensure steps are ordered for backend
-            annotations: step.annotations.map(ann => ({ ...ann, id: ann.id.includes('-') ? undefined : ann.id })) // Same for annotations
+            stepOrder: index,
+            annotations: step.annotations.map(ann => ({ ...ann, id: ann.id.includes('-') ? undefined : ann.id }))
           })),
         }),
       });
@@ -199,11 +241,8 @@ const ProductTourEditor: React.FC = () => {
       const savedTour = await response.json();
       console.log('Tour saved successfully:', savedTour);
       setSaveSuccess(true);
-      setTourId(savedTour.id); // Set the tour ID if it's a new tour
-      // Re-fetch the tour to get correct DB IDs for newly created steps/annotations
+      setTourId(savedTour.id);
       if (savedTour.id) {
-        // This will trigger the useEffect to load the tour with fresh data
-        // A more sophisticated approach might update state directly with returned IDs
         window.history.replaceState(null, '', `/editor?tourId=${savedTour.id}`);
       }
 
@@ -213,6 +252,35 @@ const ProductTourEditor: React.FC = () => {
     } finally {
       setIsSaving(false);
     }
+  };
+
+  const handleNextStepInEditor = () => {
+    if (selectedStepIndex < tourSteps.length - 1) {
+      setDirection(1);
+      setSelectedStepIndex((prevIndex) => prevIndex + 1);
+    }
+  };
+
+  const handlePreviousStepInEditor = () => {
+    if (selectedStepIndex > 0) {
+      setDirection(-1);
+      setSelectedStepIndex((prevIndex) => prevIndex - 1);
+    }
+  };
+
+  const variants = {
+    enter: (direction: number) => ({
+      x: direction > 0 ? 1000 : -1000,
+      opacity: 0
+    }),
+    center: {
+      x: 0,
+      opacity: 1
+    },
+    exit: (direction: number) => ({
+      x: direction < 0 ? 1000 : -1000,
+      opacity: 0
+    })
   };
 
   if (isLoadingTour) {
@@ -262,11 +330,23 @@ const ProductTourEditor: React.FC = () => {
             onSelectStep={handleSelectStep}
             onAddStep={handleAddStep}
             onDeleteStep={handleDeleteStep}
-            onMoveStep={handleMoveStep} // Pass the new handler
+            onMoveStep={handleMoveStep}
           />
 
           {currentStep && (
             <>
+              <div className="space-y-4 mt-4">
+                <div>
+                  <Label htmlFor="step-description">Step Description</Label>
+                  <Textarea
+                    id="step-description"
+                    value={currentStep.description}
+                    onChange={handleStepDescriptionChange}
+                    placeholder="Describe what's happening in this step..."
+                    rows={3}
+                  />
+                </div>
+              </div>
               <ImageUploader onImageUpload={handleImageUpload} currentImageUrl={currentStep.imageUrl} />
               <AnnotationTool onAddAnnotation={handleAddAnnotation} />
             </>
@@ -274,19 +354,53 @@ const ProductTourEditor: React.FC = () => {
           <ScreenRecorder />
           <PublishControls
             tourId={tourId}
-            initialStatus={user?.status || 'draft' as 'draft' | 'published' | 'private'} // Pass actual user status if available
+            initialStatus={tourCurrentStatus}
             onStatusChange={(newStatus) => {
-              // Optionally update local tour status here if needed
+              setTourCurrentStatus(newStatus); // Update local status state
               console.log('Tour status changed to:', newStatus);
             }}
           />
         </div>
         <div>
           <h2 className="text-xl font-semibold mb-2">Tour Preview</h2>
-          <TourPreview
-            imageUrl={currentStep?.imageUrl || null}
-            annotations={currentStep?.annotations || []}
-          />
+          <div className="relative mb-6 overflow-hidden border rounded-md min-h-96 flex items-center justify-center">
+            <AnimatePresence initial={false} custom={direction}>
+              <motion.div
+                key={selectedStepIndex} 
+                custom={direction}
+                variants={variants}
+                initial="enter"
+                animate="center"
+                exit="exit"
+                transition={{
+                  x: { type: "spring", stiffness: 300, damping: 30 },
+                  opacity: { duration: 0.2 }
+                }}
+                className="w-full h-full absolute"
+              >
+                <TourPreview
+                  imageUrl={currentStep?.imageUrl || null}
+                  annotations={currentStep?.annotations || []}
+                  onUpdateAnnotationPosition={handleUpdateAnnotationPosition}
+                  onDeleteAnnotation={handleDeleteAnnotation}
+                />
+              </motion.div>
+            </AnimatePresence>
+            {currentStep?.description && (
+              <div className="absolute bottom-4 left-1/2 -translate-x-1/2 bg-black bg-opacity-70 text-white p-3 rounded-md max-w-xs text-sm text-center z-10">
+                {currentStep.description}
+              </div>
+            )}
+          </div>
+          <div className="flex justify-between items-center mt-4">
+            <Button onClick={handlePreviousStepInEditor} disabled={selectedStepIndex === 0} variant="outline">
+              Previous Step
+            </Button>
+            <span className="text-lg font-semibold">{selectedStepIndex + 1} / {tourSteps.length}</span>
+            <Button onClick={handleNextStepInEditor} disabled={selectedStepIndex === tourSteps.length - 1}>
+              Next Step
+            </Button>
+          </div>
         </div>
       </div>
     </div>
