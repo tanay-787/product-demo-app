@@ -12,6 +12,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Menu } from "lucide-react";
 import React from "react";
+import { LineShadowText } from "./ui/line-shadow-text";
 
 const navLinks = [
   { label: "Home", to: "/" },
@@ -29,12 +30,12 @@ export function Header({ displayHeader = true }: HeaderProps) {
   if (!displayHeader) return null;
   
   return (
-    <header className="sticky top-0 z-50 w-full bg-background/80 backdrop-blur supports-[backdrop-filter]:bg-background/60 border-b border-border shadow-sm">
+    <header className="sticky top-0 z-50 w-full bg-gradient-to-br from-background via-muted/20 to-background text-foreground backdrop-blur supports-[backdrop-filter]:bg-background/60 border-b border-border shadow-sm">
       <nav className="mx-auto flex h-16 max-w-7xl items-center justify-between px-4 sm:px-6 lg:px-8">
         {/* Left: Project Title */}
         <div className="flex items-center gap-2">
           <Link to="/" className="text-3xl font-bold tracking-tight text-primary hover:opacity-80 focus:outline-none focus-visible:ring-2 focus-visible:ring-ring rounded-md transition-colors">
-            Arcade
+            <LineShadowText className="italic">Tourify</LineShadowText>
           </Link>
         </div>
 

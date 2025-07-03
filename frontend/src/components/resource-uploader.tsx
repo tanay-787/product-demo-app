@@ -163,7 +163,7 @@ export default function ResourceUploader({
 
         if (uploadedUrl) {
           onResourceUpload(uploadedUrl, uploadedType)
-          setOpen(false)
+          // setOpen(false) // Temporarily commented out for debugging
         }
       }
     },
@@ -207,7 +207,7 @@ export default function ResourceUploader({
           clearInterval(recordingIntervalRef.current)
         }
 
-        setOpen(false)
+        // setOpen(false) // Temporarily commented out for debugging
       }
 
       // Start recording timer
@@ -465,6 +465,12 @@ export default function ResourceUploader({
             </div>
           )}
         </div>
+
+        {/* Add a close button for debugging purposes */}
+        <div className="mt-4 flex justify-end">
+          <Button onClick={() => setOpen(false)}>Close Debug Dialog</Button>
+        </div>
+
       </DialogContent>
     </Dialog>
   )

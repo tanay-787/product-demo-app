@@ -1,11 +1,12 @@
 import express from "express"
 import cors from "cors"
+import path from "path"
 import { authMiddleware } from "./middleware/auth"
 import toursRouter from "./routes/tours"
 import publicToursRouter from "./routes/publicTours"
 import analyticsRouter from "./routes/analytics"
 import insightsRouter from "./routes/insights"
-import mediaRouter from "./routes/media" // Import the new media router
+import mediaRouter from "./routes/media"
 
 const app = express()
 const PORT = process.env.PORT || 3000
@@ -14,16 +15,24 @@ const PORT = process.env.PORT || 3000
 app.use(cors())
 app.use(express.json())
 
-// Routes
+// Serve static files from the frontend's dist directory
+app.use(express.static(path.join(__dirname, '..', '..', 'frontend', 'dist')))
+
+// API Routes
 app.use("/api/tours", authMiddleware, toursRouter)
 app.use("/api/view", publicToursRouter) // Public routes for viewing tours
 app.use("/api/analytics", analyticsRouter)
 app.use("/api/insights", authMiddleware, insightsRouter)
-app.use("/api/media", authMiddleware, mediaRouter) // Add the new media router
+app.use("/api/media", authMiddleware, mediaRouter)
 
 // Health check
 app.get("/api/health", (req, res) => {
   res.json({ status: "OK", timestamp: new Date().toISOString() })
+})
+
+// Fallback for client-side routing (must be after all API routes)
+app.get("*", (req, res) => {
+  res.sendFile(path.join(__dirname, '..', '..', 'frontend', 'dist', 'index.html'))
 })
 
 // Error handling middleware

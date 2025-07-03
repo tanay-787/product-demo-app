@@ -114,19 +114,19 @@ export default function TourPreview({
   return (
     <div ref={containerRef} className="relative w-full h-full flex items-center justify-center bg-muted/20">
       {imageUrl || videoUrl ? (
-        <div className="relative max-w-full max-h-full">
+        <div className="relative w-full h-full">
           {imageUrl && (
             <img
               src={imageUrl}
               alt="Tour step preview"
-              className="max-w-full max-h-full object-contain rounded border shadow-sm"
+              className="w-full h-full object-contain rounded border shadow-sm"
             />
           )}
           {videoUrl && (
             <video
               src={videoUrl}
               controls
-              className="max-w-full max-h-full object-contain rounded border shadow-sm"
+              className="w-full h-full object-contain rounded border shadow-sm"
             />
           )}
           {annotations.map((annotation) => (
