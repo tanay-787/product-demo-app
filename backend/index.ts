@@ -6,7 +6,7 @@ import { authMiddleware } from "./middleware/auth"
 import toursRouter from "./routes/tours"
 import publicToursRouter from "./routes/publicTours"
 import analyticsRouter from "./routes/analytics"
-
+import insightsRouter from './routes/insights';
 dotenv.config()
 
 const app = express()
@@ -32,10 +32,10 @@ app.post("/api/analytics", (req, res) => {
   res.status(200).json({ message: "Analytics event received" });
 });
 
-app.use("/api", authMiddleware)
-app.use("/api/analytics", analyticsRouter)
-app.use("/api/view", publicToursRouter)
-app.use("/api/tours", toursRouter)
+app.use("/api/tours", authMiddleware, toursRouter)
+app.use("/api/public/tours", publicToursRouter)
+app.use("/api/analytics", authMiddleware, analyticsRouter)
+app.use("/api/insights", authMiddleware, insightsRouter)
 
 // Error handling middleware
 app.use((err: any, req: express.Request, res: express.Response, next: express.NextFunction) => {

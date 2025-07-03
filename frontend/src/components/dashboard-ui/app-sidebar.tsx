@@ -37,13 +37,13 @@ const data = {
   navMain: [
     {
       title: "Tours",
-      url: "/tours",
+      url: "/:uid/tours",
       icon: ChartNoAxesGantt,
       isActive: true,
     },
     {
       title: "Insights",
-      url: "/insights",
+      url: "/projects/insights",
       icon: ChartColumn,
     },
     {

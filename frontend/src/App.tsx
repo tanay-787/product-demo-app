@@ -12,6 +12,7 @@ import Loading from './pages/dashboard/loading';
 import JWT_Testing from './pages/testing/auth-token';
 import ProductTourEditor from './pages/editor/ProductTourEditor';
 import TourViewer from './pages/viewer/TourViewer';
+import Insights from './pages/dashboard/insights';
 
 
 function HandlerRoutes() {
@@ -20,7 +21,6 @@ function HandlerRoutes() {
 }
 
 export default function App() {
-  
   return (
     <Suspense fallback={null}>
       <BrowserRouter>
@@ -30,14 +30,15 @@ export default function App() {
               <Route path="/handler/*" element={<HandlerRoutes />} />
               <Route path="/" element={<LayoutController />}>
                 <Route index element={<LandingPage />} />
-                <Route path='about' />
-                <Route path='pricing' />
+                <Route path="about" />
+                <Route path="pricing" />
               </Route>
               <Route path="/auth-testing" element={<JWT_Testing />} />
               <Route path="/projects" element={<DashboardLayout />}>
                 <Route index element={<Overview />} />
                 <Route path="overview" element={<Overview />} />
                 <Route path="manage" element={<Manage />} />
+                <Route path="insights" element={<Insights />} /> {/* Add this line */}
                 <Route path="details" element={<ProjectDetails />} />
                 <Route path="loading" element={<Loading />} />
               </Route>
@@ -49,5 +50,5 @@ export default function App() {
         </StackProvider>
       </BrowserRouter>
     </Suspense>
-  );
+  )
 }
