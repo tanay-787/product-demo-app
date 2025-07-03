@@ -145,7 +145,7 @@ const PublishControls: React.FC<PublishControlsProps> = ({ tourId, initialStatus
   return (
     <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5 }}>
       <Card>
-        <CardHeader>
+        <CardHeader className="border-b border-border">
           <CardTitle className="flex items-center gap-2">
             <Share2 className="w-5 h-5" />
             Publish & Share
@@ -171,9 +171,6 @@ const PublishControls: React.FC<PublishControlsProps> = ({ tourId, initialStatus
               ))}
             </div>
             <div className="flex items-center gap-2">
-              <Badge variant="secondary" className={`${getStatusColor(status)} text-white`}>
-                {status.charAt(0).toUpperCase() + status.slice(1)}
-              </Badge>
               <span className="text-xs text-muted-foreground">
                 {status === "draft" && "Only you can see this tour"}
                 {status === "published" && "Tour is live and discoverable"}
@@ -229,7 +226,7 @@ const PublishControls: React.FC<PublishControlsProps> = ({ tourId, initialStatus
           )}
 
           {/* Quick Actions */}
-          <div className="pt-4 border-t border-border">
+          {/* <div className="pt-4 border-t border-border">
             <div className="flex flex-wrap gap-2">
               <Button
                 variant="outline"
@@ -252,7 +249,7 @@ const PublishControls: React.FC<PublishControlsProps> = ({ tourId, initialStatus
                 </Button>
               )}
             </div>
-          </div>
+          </div> */}
         </CardContent>
       </Card>
     </motion.div>

@@ -569,12 +569,12 @@ const ProductTourEditor: React.FC = () => {
       {/* Publish Controls Dialog - Correctly placed as an overlay */}
       <Dialog open={isPublishControlsOpen} onOpenChange={setIsPublishControlsOpen}>
         <DialogContent className="sm:max-w-[500px]">
-          <DialogHeader>
+          {/* <DialogHeader>
             <DialogTitle>Publish & Share Tour</DialogTitle>
             <DialogDescription>
               Control your tour's visibility and get shareable links.
             </DialogDescription>
-          </DialogHeader>
+          </DialogHeader> */}
           <PublishControls 
             tourId={tourId}
             initialStatus={tourCurrentStatus}
