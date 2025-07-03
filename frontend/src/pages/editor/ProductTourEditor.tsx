@@ -132,6 +132,7 @@ const ProductTourEditor: React.FC = () => {
       }
     },
     onSuccess: (data) => {
+      console.log('Data received in onSuccess:', data); // Added for debugging
       setTourId(data.id)
       setTourTitle(data.title)
       setTourDescription(data.description || "")
@@ -167,6 +168,8 @@ const ProductTourEditor: React.FC = () => {
       alert("Steps with annotations must have an image or video.")
       return
     }
+
+    console.log("Sending tour steps to backend:", tourSteps); // Added for debugging
 
     saveTourMutation.mutate({
       title: tourTitle,
@@ -234,8 +237,9 @@ const ProductTourEditor: React.FC = () => {
   }
 
   const handleResourceUpload = (url: string | null, type: "image" | "video" | null) => {
-    setTourSteps((prevSteps) =>
-      prevSteps.map((step, idx) =>
+    console.log("handleResourceUpload received - URL:", url, "Type:", type); // Added for debugging
+    setTourSteps((prevSteps) => {
+      const updatedSteps = prevSteps.map((step, idx) =>
         idx === selectedStepIndex
           ? {
               ...step,
@@ -244,9 +248,11 @@ const ProductTourEditor: React.FC = () => {
               annotations: [], // Clear annotations when changing resource
             }
           : step,
-      ),
-    )
-  }
+      );
+      console.log("Tour steps after handleResourceUpload:", updatedSteps); // Added for debugging
+      return updatedSteps;
+    });
+  };
 
   const handleStepDescriptionChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
     const newDescription = e.target.value

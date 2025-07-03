@@ -26,7 +26,7 @@ router.get("/", async (req, res, next) => {
         },
       },
     })
-    res.json({ tours: userTours }) // Modified line: Wrap userTours in an object with 'tours' key
+    res.json({ tours: userTours })
   } catch (error) {
     next(error)
   }
@@ -82,7 +82,7 @@ router.post("/", async (req, res, next) => {
     }
 
     const newTourId = uuidv4()
-    const newTour = await db
+    await db
       .insert(tours)
       .values({
         id: newTourId,
@@ -91,7 +91,6 @@ router.post("/", async (req, res, next) => {
         description,
         status: status || "draft",
       })
-      .returning()
 
     if (steps && steps.length > 0) {
       const stepInserts = steps.map((stepData: any, index: number) => ({
@@ -99,6 +98,7 @@ router.post("/", async (req, res, next) => {
         tourId: newTourId,
         stepOrder: index,
         imageUrl: stepData.imageUrl,
+        videoUrl: stepData.videoUrl,
         description: stepData.description,
       }))
 
@@ -119,7 +119,24 @@ router.post("/", async (req, res, next) => {
       }
     }
 
-    res.status(201).json(newTour[0])
+    // Fetch and return the complete new tour with its steps and annotations
+    const createdTour = await db.query.tours.findFirst({
+      where: eq(tours.id, newTourId),
+      with: {
+        tourSteps: {
+          with: {
+            annotations: true,
+          },
+          orderBy: [tourSteps.stepOrder],
+        },
+      },
+    })
+
+    if (!createdTour) {
+        return res.status(500).json({ error: "Failed to retrieve created tour." });
+    }
+
+    res.status(201).json(createdTour)
   } catch (error) {
     next(error)
   }
@@ -164,8 +181,7 @@ router.put("/:id", async (req, res, next) => {
       })
       .where(eq(tours.id, tourId))
 
-    // Delete existing steps and annotations for this tour
-    // This assumes cascade delete is set up correctly in your schema for annotations to tourSteps
+    // Delete existing steps and their annotations (annotations will cascade delete)
     await db.delete(tourSteps).where(eq(tourSteps.tourId, tourId))
 
     // Insert new/updated steps and their annotations
@@ -177,6 +193,7 @@ router.put("/:id", async (req, res, next) => {
           tourId: tourId,
           stepOrder: stepData.stepOrder || 0,
           imageUrl: stepData.imageUrl,
+          videoUrl: stepData.videoUrl,
           description: stepData.description,
         })
 
@@ -193,7 +210,24 @@ router.put("/:id", async (req, res, next) => {
       }
     }
 
-    res.json({ message: "Tour updated successfully." })
+    // Fetch and return the complete updated tour with its steps and annotations
+    const updatedTour = await db.query.tours.findFirst({
+        where: eq(tours.id, tourId),
+        with: {
+            tourSteps: {
+                with: {
+                    annotations: true,
+                },
+                orderBy: [tourSteps.stepOrder],
+            },
+        },
+    });
+
+    if (!updatedTour) {
+        return res.status(500).json({ error: "Failed to retrieve updated tour." });
+    }
+
+    res.json(updatedTour)
   } catch (error) {
     next(error)
   }

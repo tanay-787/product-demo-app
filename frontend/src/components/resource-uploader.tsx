@@ -33,6 +33,8 @@ import {
 } from "@/components/ui/file-list"
 import { Upload, Video, Square, ImageIcon, Trash2 } from "lucide-react"
 import { cn } from "@/lib/utils"
+import { useUser } from "@stackframe/react" // Import useUser
+import api from "@/lib/api" // Import api
 
 interface ResourceUploaderProps {
   onResourceUpload: (url: string | null, type: "image" | "video" | null) => void
@@ -45,6 +47,7 @@ export default function ResourceUploader({
   currentResourceUrl,
   currentResourceType,
 }: ResourceUploaderProps) {
+  const user = useUser() // Initialize useUser hook
   const [open, setOpen] = useState(false)
   const [files, setFiles] = useState<File[]>([])
   const [isRecording, setIsRecording] = useState<boolean>(false)
@@ -75,29 +78,96 @@ export default function ResourceUploader({
     }
   }, [])
 
+  const uploadToCloudinary = useCallback(async (file: File, resourceType: "image" | "video") => {
+    if (!user) {
+      alert("User not authenticated. Cannot upload files.")
+      return null
+    }
+
+    try {
+      const authHeaders = await user.getAuthHeaders()
+      const { data: signatureData } = await api.get<{ signature: string; timestamp: number; api_key: string }>(
+        "/media/generate-signature",
+        { headers: authHeaders },
+      )
+
+      const formData = new FormData()
+      formData.append("file", file)
+      formData.append("api_key", signatureData.api_key)
+      formData.append("timestamp", signatureData.timestamp.toString())
+      formData.append("signature", signatureData.signature)
+
+      // Replace with your Cloudinary Cloud Name (e.g., from .env.local or fetched from backend)
+      const CLOUDINARY_CLOUD_NAME = import.meta.env.VITE_CLOUDINARY_CLOUD_NAME; // Assuming you set this in your .env.local
+
+      if (!CLOUDINARY_CLOUD_NAME) {
+        console.error("Cloudinary Cloud Name is not configured.")
+        alert("Cloudinary Cloud Name is not configured. Please check your environment variables.")
+        return null;
+      }
+
+      const cloudinaryUploadUrl = `https://api.cloudinary.com/v1_1/${CLOUDINARY_CLOUD_NAME}/${resourceType}/upload`
+
+      const uploadResponse = await fetch(cloudinaryUploadUrl, {
+        method: "POST",
+        body: formData,
+      })
+
+      if (!uploadResponse.ok) {
+        const errorData = await uploadResponse.json()
+        console.error("Cloudinary Upload Error:", errorData)
+        alert(`Failed to upload to Cloudinary: ${errorData.error.message || "Unknown error"}`)
+        return null
+      }
+
+      const cloudinaryData = await uploadResponse.json()
+      console.log("Cloudinary upload successful:", cloudinaryData)
+      console.log("Secure URL from Cloudinary:", cloudinaryData.secure_url); // <--- Added this line for debugging
+
+      // Save metadata to your backend
+      await api.post(
+        "/media/save-metadata",
+        {
+          public_id: cloudinaryData.public_id,
+          secure_url: cloudinaryData.secure_url,
+          resource_type: cloudinaryData.resource_type,
+        },
+        { headers: authHeaders },
+      )
+
+      return cloudinaryData.secure_url
+    } catch (error) {
+      console.error("Upload process failed:", error)
+      alert("An error occurred during the upload process.")
+      return null
+    }
+  }, [user])
+
   const handleFileDrop = useCallback(
-    (acceptedFiles: File[]) => {
+    async (acceptedFiles: File[]) => {
       if (acceptedFiles.length > 0) {
         const file = acceptedFiles[0]
         setFiles([file])
         setRecordedVideoUrl(null) // Clear any recorded video
 
+        let uploadedUrl: string | null = null
+        let uploadedType: "image" | "video" | null = null
+
         if (file.type.startsWith("image/")) {
-          const reader = new FileReader()
-          reader.onload = (e) => {
-            const result = e.target?.result as string
-            onResourceUpload(result, "image")
-            setOpen(false)
-          }
-          reader.readAsDataURL(file)
+          uploadedUrl = await uploadToCloudinary(file, "image")
+          uploadedType = "image"
         } else if (file.type.startsWith("video/")) {
-          const url = URL.createObjectURL(file)
-          onResourceUpload(url, "video")
+          uploadedUrl = await uploadToCloudinary(file, "video")
+          uploadedType = "video"
+        }
+
+        if (uploadedUrl) {
+          onResourceUpload(uploadedUrl, uploadedType)
           setOpen(false)
         }
       }
     },
-    [onResourceUpload],
+    [onResourceUpload, uploadToCloudinary],
   )
 
   const startRecording = async () => {
@@ -120,11 +190,15 @@ export default function ResourceUploader({
         }
       }
 
-      mediaRecorder.onstop = () => {
+      mediaRecorder.onstop = async () => {
         const blob = new Blob(recordedChunksRef.current, { type: "video/webm" })
-        const url = URL.createObjectURL(blob)
-        setRecordedVideoUrl(url)
-        onResourceUpload(url, "video")
+        const recordedFile = new File([blob], `screen-recording-${Date.now()}.webm`, { type: "video/webm" })
+        
+        const uploadedUrl = await uploadToCloudinary(recordedFile, "video")
+        if (uploadedUrl) {
+          setRecordedVideoUrl(uploadedUrl)
+          onResourceUpload(uploadedUrl, "video")
+        }
 
         // Stop all tracks
         stream.getTracks().forEach((track) => track.stop())

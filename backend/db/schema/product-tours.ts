@@ -21,6 +21,7 @@ export const tourSteps = pgTable("tour_steps", {
     .references(() => tours.id, { onDelete: "cascade" }),
   stepOrder: integer("step_order").notNull(),
   imageUrl: text("image_url"),
+  videoUrl: text("video_url"), // New column for video URL
   description: text("description"),
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
@@ -53,6 +54,16 @@ export const tourShares = pgTable("tour_shares", {
   updatedAt: timestamp("updated_at").defaultNow(),
 })
 
+// Cloudinary Files Table
+export const cloudinaryFiles = pgTable("cloudinary_files", {
+  id: uuid("id").primaryKey().defaultRandom(), // Changed to uuid for consistency and better distribution
+  publicId: text("public_id").notNull().unique(), // Cloudinary's unique identifier for the asset
+  mediaUrl: text("media_url").notNull(),         // Media URL for the asset on Cloudinary's CDN
+  resourceType: text("resource_type").notNull(),     // Type of asset (e.g., 'image', 'video', 'raw')
+  userId: text("user_id").notNull(),           // User associated with the file
+  uploadTimestamp: timestamp("upload_timestamp").defaultNow(),
+});
+
 // Define Drizzle Relations
 export const toursRelations = relations(tours, ({ many }) => ({
   tourSteps: many(tourSteps),
@@ -80,3 +91,6 @@ export const tourSharesRelations = relations(tourShares, ({ one }) => ({
     references: [tours.id],
   }),
 }))
+
+// Adding relation for cloudinaryFiles if needed, e.g., to link to users table
+// For now, no direct relation defined, user_id acts as a foreign key conceptually

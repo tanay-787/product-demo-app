@@ -5,6 +5,7 @@ import toursRouter from "./routes/tours"
 import publicToursRouter from "./routes/publicTours"
 import analyticsRouter from "./routes/analytics"
 import insightsRouter from "./routes/insights"
+import mediaRouter from "./routes/media" // Import the new media router
 
 const app = express()
 const PORT = process.env.PORT || 3000
@@ -18,6 +19,7 @@ app.use("/api/tours", authMiddleware, toursRouter)
 app.use("/api/view", publicToursRouter) // Public routes for viewing tours
 app.use("/api/analytics", analyticsRouter)
 app.use("/api/insights", authMiddleware, insightsRouter)
+app.use("/api/media", authMiddleware, mediaRouter) // Add the new media router
 
 // Health check
 app.get("/api/health", (req, res) => {
