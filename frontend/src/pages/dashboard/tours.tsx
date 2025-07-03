@@ -1,82 +1,96 @@
 "use client"
 
-import type React from "react"
 import { useState } from "react"
-import { Link, useNavigate } from "react-router-dom"
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Input } from "@/components/ui/input"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
-import api from "@/lib/api"
 import { useUser } from "@stackframe/react"
-import { Plus, Search, Filter, MoreVertical, Edit, Eye, Share2, Trash2, Calendar, BarChart3, Clock } from "lucide-react"
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu"
+import { useNavigate } from "react-router-dom"
+import api from "@/lib/api"
+import { Plus, Search, Filter, Eye, Edit, Share2, Trash2, MoreHorizontal, Calendar, Copy } from "lucide-react"
+import { motion } from "motion/react"
+import { cn } from "@/lib/utils"
 
 interface Tour {
   id: string
   title: string
   description?: string
-  status: string
-  views?: number
+  status: "draft" | "published" | "private"
   createdAt: string
-  updatedAt?: string
-  tourSteps?: any[]
+  updatedAt: string
+  viewCount?: number
+  stepCount?: number
+  shareCount?: number
 }
 
-const Tours: React.FC = () => {
+export default function ToursPage() {
+  const user = useUser({ or: "redirect" })
   const navigate = useNavigate()
   const queryClient = useQueryClient()
-  const user = useUser({ or: "redirect" })
 
   const [searchQuery, setSearchQuery] = useState("")
   const [statusFilter, setStatusFilter] = useState<string>("all")
-  const [sortBy, setSortBy] = useState<string>("recent")
+  const [sortBy, setSortBy] = useState<string>("updated")
 
-  const {
-    data: tours,
-    isLoading,
-    isError,
-    error,
-  } = useQuery<Tour[], Error>({
+  const { data: tours = [], isLoading } = useQuery<Tour[]>({
     queryKey: ["tours"],
     queryFn: async () => {
-      if (!user) {
-        throw new Error("User not authenticated.")
-      }
+      if (!user) return []
       const authHeaders = await user.getAuthHeaders()
-      const response = await api.get<Tour[]>("/tours", { headers: authHeaders })
-      return response.data
+      const response = await api.get<{ tours: Tour[] }>("/tours", { headers: authHeaders })
+      return response.data.tours
     },
     enabled: !!user,
   })
 
-  const deleteTourMutation = useMutation<void, Error, string>({
+  const deleteTourMutation = useMutation({
     mutationFn: async (tourId: string) => {
-      if (!user) {
-        throw new Error("User not authenticated.")
-      }
-      const { accessToken } = await user.getAuthJson()
-      await api.delete(`/tours/${tourId}`, {
-        headers: {
-          Authorization: `Bearer ${accessToken}`,
-        },
-      })
+      if (!user) throw new Error("User not authenticated")
+      const authHeaders = await user.getAuthHeaders()
+      await api.delete(`/tours/${tourId}`, { headers: authHeaders })
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["tours"] })
     },
-    onError: (err) => {
-      console.error("Error deleting tour:", err)
-    },
   })
+
+  const filteredAndSortedTours = tours
+    .filter((tour) => {
+      const matchesSearch =
+        tour.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        (tour.description?.toLowerCase().includes(searchQuery.toLowerCase()) ?? false)
+      const matchesStatus = statusFilter === "all" || tour.status === statusFilter
+      return matchesSearch && matchesStatus
+    })
+    .sort((a, b) => {
+      switch (sortBy) {
+        case "title":
+          return a.title.localeCompare(b.title)
+        case "created":
+          return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+        case "views":
+          return (b.viewCount || 0) - (a.viewCount || 0)
+        case "updated":
+        default:
+          return new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime()
+      }
+    })
+
+  const handleCreateTour = () => {
+    navigate("/editor")
+  }
+
+  const handleEditTour = (tourId: string) => {
+    navigate(`/editor?tourId=${tourId}`)
+  }
+
+  const handleViewTour = (tourId: string) => {
+    navigate(`/viewer/${tourId}`)
+  }
 
   const handleDeleteTour = (tourId: string, tourTitle: string) => {
     if (window.confirm(`Are you sure you want to delete "${tourTitle}"? This action cannot be undone.`)) {
@@ -84,87 +98,92 @@ const Tours: React.FC = () => {
     }
   }
 
+  const handleShareTour = (tourId: string) => {
+    const shareUrl = `${window.location.origin}/viewer/${tourId}`
+    navigator.clipboard.writeText(shareUrl)
+    // You could add a toast notification here
+    alert("Share link copied to clipboard!")
+  }
+
   const getStatusColor = (status: string) => {
     switch (status) {
       case "published":
-        return "bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300"
+        return "bg-green-500/10 text-green-500 border-green-500/20"
       case "draft":
-        return "bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-300"
+        return "bg-yellow-500/10 text-yellow-500 border-yellow-500/20"
       case "private":
-        return "bg-gray-100 text-gray-800 dark:bg-gray-900 dark:text-gray-300"
+        return "bg-gray-500/10 text-gray-500 border-gray-500/20"
       default:
-        return "bg-gray-100 text-gray-800 dark:bg-gray-900 dark:text-gray-300"
+        return "bg-gray-500/10 text-gray-500 border-gray-500/20"
     }
   }
 
-  // Filter and sort tours
-  const filteredTours =
-    tours?.filter((tour) => {
-      const matchesSearch =
-        tour.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        tour.description?.toLowerCase().includes(searchQuery.toLowerCase())
-      const matchesStatus = statusFilter === "all" || tour.status === statusFilter
-      return matchesSearch && matchesStatus
-    }) || []
-
-  const sortedTours = [...filteredTours].sort((a, b) => {
-    switch (sortBy) {
-      case "recent":
-        return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
-      case "oldest":
-        return new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()
-      case "title":
-        return a.title.localeCompare(b.title)
-      case "views":
-        return (b.views || 0) - (a.views || 0)
-      default:
-        return 0
-    }
-  })
+  const formatDate = (dateString: string) => {
+    return new Date(dateString).toLocaleDateString("en-US", {
+      month: "short",
+      day: "numeric",
+      year: "numeric",
+    })
+  }
 
   if (isLoading) {
     return (
       <div className="p-6 space-y-6">
-        <div className="animate-pulse">
-          <div className="h-8 bg-muted rounded w-48 mb-6"></div>
-          <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-            {[...Array(6)].map((_, i) => (
-              <div key={i} className="h-64 bg-muted rounded-lg"></div>
-            ))}
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="text-3xl font-bold">Tours</h1>
+            <p className="text-muted-foreground">Manage all your product tours</p>
           </div>
+          <Button onClick={handleCreateTour} className="gap-2">
+            <Plus className="w-4 h-4" />
+            New Tour
+          </Button>
         </div>
-      </div>
-    )
-  }
-
-  if (isError) {
-    return (
-      <div className="p-6 text-center">
-        <p className="text-destructive">Error: {error?.message}</p>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {[...Array(6)].map((_, i) => (
+            <Card key={i} className="animate-pulse">
+              <CardHeader>
+                <div className="h-4 bg-muted rounded w-3/4"></div>
+                <div className="h-3 bg-muted rounded w-1/2"></div>
+              </CardHeader>
+              <CardContent>
+                <div className="h-3 bg-muted rounded w-full mb-2"></div>
+                <div className="h-3 bg-muted rounded w-2/3"></div>
+              </CardContent>
+            </Card>
+          ))}
+        </div>
       </div>
     )
   }
 
   return (
-    <div className="p-6 space-y-6 bg-background min-h-screen">
+    <div className="p-6 space-y-6">
       {/* Header */}
-      <div className="flex items-center justify-between">
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        className="flex items-center justify-between"
+      >
         <div>
-          <h1 className="text-3xl font-bold tracking-tight">Tours</h1>
-          <p className="text-muted-foreground">Manage and organize your product tours</p>
+          <h1 className="text-3xl font-bold">Tours</h1>
+          <p className="text-muted-foreground">Manage all your product tours</p>
         </div>
-        <Link to="/editor">
-          <Button className="bg-primary hover:bg-primary/90">
-            <Plus className="w-4 h-4 mr-2" />
-            Create New Tour
-          </Button>
-        </Link>
-      </div>
+        <Button onClick={handleCreateTour} className="gap-2">
+          <Plus className="w-4 h-4" />
+          New Tour
+        </Button>
+      </motion.div>
 
-      {/* Filters and Search */}
-      <div className="flex flex-col sm:flex-row gap-4">
+      {/* Filters */}
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.1 }}
+        className="flex flex-col sm:flex-row gap-4"
+      >
         <div className="relative flex-1">
-          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground w-4 h-4" />
+          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-muted-foreground" />
           <Input
             placeholder="Search tours..."
             value={searchQuery}
@@ -189,156 +208,135 @@ const Tours: React.FC = () => {
             <SelectValue placeholder="Sort by" />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="recent">Most Recent</SelectItem>
-            <SelectItem value="oldest">Oldest First</SelectItem>
-            <SelectItem value="title">Title A-Z</SelectItem>
-            <SelectItem value="views">Most Views</SelectItem>
+            <SelectItem value="updated">Last Updated</SelectItem>
+            <SelectItem value="created">Date Created</SelectItem>
+            <SelectItem value="title">Title</SelectItem>
+            <SelectItem value="views">View Count</SelectItem>
           </SelectContent>
         </Select>
-      </div>
+      </motion.div>
 
       {/* Tours Grid */}
-      {sortedTours.length === 0 ? (
-        <Card className="p-12 text-center">
-          <div className="flex flex-col items-center gap-4">
-            <div className="w-16 h-16 bg-muted rounded-full flex items-center justify-center">
-              <BarChart3 className="w-8 h-8 text-muted-foreground" />
-            </div>
-            <div>
-              <h3 className="text-lg font-semibold mb-2">
-                {searchQuery || statusFilter !== "all" ? "No tours found" : "No tours created yet"}
-              </h3>
-              <p className="text-muted-foreground mb-4">
+      <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }}>
+        {filteredAndSortedTours.length === 0 ? (
+          <Card>
+            <CardContent className="text-center py-12">
+              <div className="text-muted-foreground mb-4">
                 {searchQuery || statusFilter !== "all"
-                  ? "Try adjusting your search or filter criteria"
-                  : "Create your first interactive product tour to get started!"}
-              </p>
+                  ? "No tours match your current filters."
+                  : "No tours created yet. Click 'New Tour' to start!"}
+              </div>
               {!searchQuery && statusFilter === "all" && (
-                <Link to="/editor">
-                  <Button>
-                    <Plus className="w-4 h-4 mr-2" />
-                    Create New Tour
-                  </Button>
-                </Link>
+                <Button onClick={handleCreateTour} className="gap-2">
+                  <Plus className="w-4 h-4" />
+                  Create Your First Tour
+                </Button>
               )}
-            </div>
-          </div>
-        </Card>
-      ) : (
-        <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-          {sortedTours.map((tour) => (
-            <Card key={tour.id} className="group transition-all duration-200 hover:shadow-lg dark:hover:shadow-xl">
-              <CardHeader className="pb-3">
-                <div className="flex items-start justify-between">
-                  <div className="flex-1 min-w-0">
-                    <CardTitle className="text-lg font-semibold line-clamp-1 group-hover:text-primary transition-colors">
-                      {tour.title}
-                    </CardTitle>
-                    {tour.description && (
-                      <p className="text-sm text-muted-foreground line-clamp-2 mt-1">{tour.description}</p>
-                    )}
-                  </div>
-                  <div className="flex items-center gap-2 ml-2">
-                    <Badge className={`text-xs ${getStatusColor(tour.status)}`}>{tour.status}</Badge>
-                    <DropdownMenu>
-                      <DropdownMenuTrigger asChild>
-                        <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
-                          <MoreVertical className="h-4 w-4" />
-                        </Button>
-                      </DropdownMenuTrigger>
-                      <DropdownMenuContent align="end">
-                        <DropdownMenuItem onClick={() => navigate(`/editor?tourId=${tour.id}`)}>
-                          <Edit className="mr-2 h-4 w-4" />
-                          Edit
-                        </DropdownMenuItem>
-                        {tour.status === "published" && (
-                          <DropdownMenuItem onClick={() => navigate(`/view/${tour.id}`)}>
-                            <Eye className="mr-2 h-4 w-4" />
-                            View
-                          </DropdownMenuItem>
-                        )}
-                        <DropdownMenuItem>
-                          <Share2 className="mr-2 h-4 w-4" />
-                          Share
-                        </DropdownMenuItem>
-                        <DropdownMenuSeparator />
-                        <DropdownMenuItem
-                          className="text-destructive"
-                          onClick={() => handleDeleteTour(tour.id, tour.title)}
-                        >
-                          <Trash2 className="mr-2 h-4 w-4" />
-                          Delete
-                        </DropdownMenuItem>
-                      </DropdownMenuContent>
-                    </DropdownMenu>
-                  </div>
-                </div>
-              </CardHeader>
-              <CardContent className="pt-0">
-                <div className="space-y-4">
-                  {/* Stats */}
-                  <div className="grid grid-cols-3 gap-4 text-center">
-                    <div className="space-y-1">
-                      <div className="text-sm font-medium">{tour.tourSteps?.length || 0}</div>
-                      <div className="text-xs text-muted-foreground">Steps</div>
-                    </div>
-                    <div className="space-y-1">
-                      <div className="text-sm font-medium">{tour.views || 0}</div>
-                      <div className="text-xs text-muted-foreground">Views</div>
-                    </div>
-                    <div className="space-y-1">
-                      <div className="text-sm font-medium">0</div>
-                      <div className="text-xs text-muted-foreground">Shares</div>
-                    </div>
-                  </div>
-
-                  {/* Meta Info */}
-                  <div className="flex items-center justify-between text-xs text-muted-foreground">
-                    <div className="flex items-center gap-1">
-                      <Calendar className="w-3 h-3" />
-                      <span>{new Date(tour.createdAt).toLocaleDateString()}</span>
-                    </div>
-                    {tour.updatedAt && tour.updatedAt !== tour.createdAt && (
-                      <div className="flex items-center gap-1">
-                        <Clock className="w-3 h-3" />
-                        <span>Updated {new Date(tour.updatedAt).toLocaleDateString()}</span>
+            </CardContent>
+          </Card>
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {filteredAndSortedTours.map((tour, index) => (
+              <motion.div
+                key={tour.id}
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: index * 0.05 }}
+              >
+                <Card className="group hover:shadow-lg transition-all duration-200 hover:border-primary/20">
+                  <CardHeader className="pb-3">
+                    <div className="flex items-start justify-between">
+                      <div className="flex-1 min-w-0">
+                        <CardTitle className="text-lg truncate group-hover:text-primary transition-colors">
+                          {tour.title}
+                        </CardTitle>
+                        <div className="flex items-center gap-2 mt-1">
+                          <Badge variant="outline" className={cn("text-xs", getStatusColor(tour.status))}>
+                            {tour.status}
+                          </Badge>
+                          {tour.stepCount && (
+                            <span className="text-xs text-muted-foreground">{tour.stepCount} steps</span>
+                          )}
+                        </div>
                       </div>
-                    )}
-                  </div>
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
+                            <MoreHorizontal className="w-4 h-4" />
+                          </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end">
+                          <DropdownMenuItem onClick={() => handleViewTour(tour.id)}>
+                            <Eye className="w-4 h-4 mr-2" />
+                            View Tour
+                          </DropdownMenuItem>
+                          <DropdownMenuItem onClick={() => handleEditTour(tour.id)}>
+                            <Edit className="w-4 h-4 mr-2" />
+                            Edit Tour
+                          </DropdownMenuItem>
+                          <DropdownMenuItem onClick={() => handleShareTour(tour.id)}>
+                            <Copy className="w-4 h-4 mr-2" />
+                            Copy Link
+                          </DropdownMenuItem>
+                          <DropdownMenuItem
+                            onClick={() => handleDeleteTour(tour.id, tour.title)}
+                            className="text-destructive focus:text-destructive"
+                          >
+                            <Trash2 className="w-4 h-4 mr-2" />
+                            Delete Tour
+                          </DropdownMenuItem>
+                        </DropdownMenuContent>
+                      </DropdownMenu>
+                    </div>
+                  </CardHeader>
+                  <CardContent className="space-y-4">
+                    <CardDescription className="line-clamp-2">
+                      {tour.description || "No description provided"}
+                    </CardDescription>
 
-                  {/* Action Buttons */}
-                  <div className="flex gap-2 pt-2">
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      className="flex-1 bg-transparent"
-                      onClick={() => navigate(`/editor?tourId=${tour.id}`)}
-                    >
-                      <Edit className="w-4 h-4 mr-1" />
-                      Edit
-                    </Button>
-                    {tour.status === "published" && (
-                      <Button size="sm" className="flex-1" onClick={() => navigate(`/view/${tour.id}`)}>
-                        <Eye className="w-4 h-4 mr-1" />
+                    <div className="flex items-center justify-between text-sm text-muted-foreground">
+                      <div className="flex items-center gap-1">
+                        <Calendar className="w-3 h-3" />
+                        <span>{formatDate(tour.updatedAt)}</span>
+                      </div>
+                      {tour.viewCount !== undefined && (
+                        <div className="flex items-center gap-1">
+                          <Eye className="w-3 h-3" />
+                          <span>{tour.viewCount}</span>
+                        </div>
+                      )}
+                    </div>
+
+                    <div className="flex items-center gap-2 pt-2">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => handleViewTour(tour.id)}
+                        className="flex-1 gap-1"
+                      >
+                        <Eye className="w-3 h-3" />
                         View
                       </Button>
-                    )}
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          ))}
-        </div>
-      )}
-
-      {/* Results Summary */}
-      {tours && tours.length > 0 && (
-        <div className="text-center text-sm text-muted-foreground">
-          Showing {sortedTours.length} of {tours.length} tours
-        </div>
-      )}
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => handleEditTour(tour.id)}
+                        className="flex-1 gap-1"
+                      >
+                        <Edit className="w-3 h-3" />
+                        Edit
+                      </Button>
+                      <Button variant="outline" size="sm" onClick={() => handleShareTour(tour.id)} className="gap-1">
+                        <Share2 className="w-3 h-3" />
+                      </Button>
+                    </div>
+                  </CardContent>
+                </Card>
+              </motion.div>
+            ))}
+          </div>
+        )}
+      </motion.div>
     </div>
   )
 }
-
-export default Tours
