@@ -10,9 +10,18 @@ import {
   NavigationMenuLink,
 } from "@/components/ui/navigation-menu";
 import { Button } from "@/components/ui/button";
-import { Menu } from "lucide-react";
+import { Menu, X } from "lucide-react"; // Import X icon for close button
 import React from "react";
 import { LineShadowText } from "./ui/line-shadow-text";
+import {
+  Sheet,
+  SheetContent,
+  SheetTrigger,
+  SheetHeader,
+  SheetTitle,
+  SheetDescription,
+  SheetClose
+} from "@/components/ui/sheet"; // Import Sheet components
 
 const navLinks = [
   { label: "Home", to: "/" },
@@ -63,50 +72,44 @@ export function Header({ displayHeader = true }: HeaderProps) {
         <div className="flex items-center gap-2">
           <ModeToggle />
           <UserButton />
-          {/* Hamburger for mobile */}
-          <Button
-            variant="ghost"
-            size="icon"
-            className="md:hidden ml-2"
-            aria-label="Open menu"
-            onClick={() => setMobileOpen((v) => !v)}
-          >
-            <Menu className="h-6 w-6" />
-          </Button>
+          {/* Hamburger for mobile using SheetTrigger */}
+          <Sheet open={mobileOpen} onOpenChange={setMobileOpen}>
+            <SheetTrigger asChild>
+              <Button
+                variant="ghost"
+                size="icon"
+                className="md:hidden ml-2"
+                aria-label="Open menu"
+              >
+                <Menu className="h-6 w-6" />
+              </Button>
+            </SheetTrigger>
+            <SheetContent side="right" className="w-3/4 max-w-xs p-6 flex flex-col">
+              <SheetHeader>
+                <SheetTitle className="text-lg font-bold">Menu</SheetTitle>
+                <SheetDescription className="sr-only">Mobile navigation menu</SheetDescription>
+              </SheetHeader>
+              <nav className="flex flex-col gap-2 mt-4 flex-1">
+                {navLinks.map((link) => (
+                  <SheetClose asChild key={link.to}>
+                    <Link
+                      to={link.to}
+                      className="px-3 py-2 rounded-md text-base font-medium text-muted-foreground hover:text-primary hover:bg-accent focus-visible:ring-2 focus-visible:ring-ring focus:outline-none transition-colors"
+                      onClick={() => setMobileOpen(false)}
+                    >
+                      {link.label}
+                    </Link>
+                  </SheetClose>
+                ))}
+              </nav>
+              <div className="mt-6 flex gap-2 justify-end">
+                <ModeToggle />
+                <UserButton />
+              </div>
+            </SheetContent>
+          </Sheet>
         </div>
       </nav>
-      {/* Mobile Nav Drawer */}
-      {mobileOpen && (
-        <div className="md:hidden fixed inset-0 z-40 bg-black/40" onClick={() => setMobileOpen(false)}>
-          <div
-            className="absolute top-0 right-0 w-3/4 max-w-xs h-full bg-background shadow-lg flex flex-col p-6 gap-4 animate-in slide-in-from-right-20"
-            onClick={(e) => e.stopPropagation()}
-          >
-            <div className="flex items-center justify-between mb-4">
-              <span className="text-lg font-bold">Menu</span>
-              <Button variant="ghost" size="icon" aria-label="Close menu" onClick={() => setMobileOpen(false)}>
-                <Menu className="h-6 w-6 rotate-90" />
-              </Button>
-            </div>
-            <nav className="flex flex-col gap-2">
-              {navLinks.map((link) => (
-                <Link
-                  key={link.to}
-                  to={link.to}
-                  className="px-3 py-2 rounded-md text-base font-medium text-muted-foreground hover:text-primary hover:bg-accent focus-visible:ring-2 focus-visible:ring-ring focus:outline-none transition-colors"
-                  onClick={() => setMobileOpen(false)}
-                >
-                  {link.label}
-                </Link>
-              ))}
-            </nav>
-            <div className="mt-6 flex gap-2">
-              <ModeToggle />
-              <UserButton />
-            </div>
-          </div>
-        </div>
-      )}
     </header>
   );
 }

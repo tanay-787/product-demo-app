@@ -6,8 +6,9 @@ import { useQuery } from "@tanstack/react-query"
 import { useUser } from "@stackframe/react"
 import { useNavigate } from "react-router-dom"
 import api from "@/lib/api"
-import { Plus, BarChart3, Users, TrendingUp, Clock, EyeIcon } from "lucide-react"
+import { Plus, BarChart3, Users, TrendingUp, Clock, EyeIcon, Folder, Folders } from "lucide-react"
 import { motion } from "motion/react"
+import { Separator } from "@/components/ui/separator"
 
 interface Tour {
   id: string
@@ -140,8 +141,9 @@ export default function DashboardOverview() {
         </div>
         <Button onClick={handleCreateTour} className="gap-2">
           <Plus className="w-4 h-4" />
-          New Tour
+          <span className="hidden sm:inline">New Tour</span>
         </Button>
+
       </motion.div>
 
       {/* Analytics Overview */}
@@ -151,88 +153,86 @@ export default function DashboardOverview() {
           <h2 className="text-xl font-semibold">Analytics Overview</h2>
         </div>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-          <Card>
-            <CardHeader className="pb-3">
-              <CardTitle className="text-sm font-medium flex items-center gap-2">
+          <Card className="">
+            <CardHeader className="pb-2 ">
+              <CardTitle className="h-4 text-sm font-medium flex items-center gap-2">
                 <div className="p-2 bg-blue-500/10 rounded-lg">
                   <BarChart3 className="w-4 h-4 text-blue-500" />
                 </div>
                 Total Tours
               </CardTitle>
             </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{totalTours}</div>
-              <p className="text-xs text-muted-foreground">Total demos created</p>
+            <CardContent className="pt-2">
+              <div className="h-8 text-3xl font-bold">{totalTours}</div>
+              <p className="h-3 text-xs text-muted-foreground">Total demos created</p>
             </CardContent>
           </Card>
 
           <Card>
-            <CardHeader className="pb-3">
-              <CardTitle className="text-sm font-medium flex items-center gap-2">
+            <CardHeader className="pb-2">
+              <CardTitle className="h-4 text-sm font-medium flex items-center gap-2">
                 <div className="p-2 bg-green-500/10 rounded-lg">
                   <EyeIcon className="w-4 h-4 text-green-500" />
                 </div>
                 Total Views
               </CardTitle>
             </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{totalViews.toLocaleString()}</div>
-              <p className="text-xs text-muted-foreground">Across all published tours</p>
+            <CardContent className="pt-2">
+              <div className="h-8 text-3xl font-bold">{totalViews.toLocaleString()}</div>
+              <p className="h-3 text-xs text-muted-foreground">Across all published tours</p>
             </CardContent>
           </Card>
 
           <Card>
-            <CardHeader className="pb-3">
-              <CardTitle className="text-sm font-medium flex items-center gap-2">
+            <CardHeader className="pb-2">
+              <CardTitle className="h-4 text-sm font-medium flex items-center gap-2">
                 <div className="p-2 bg-purple-500/10 rounded-lg">
                   <TrendingUp className="w-4 h-4 text-purple-500" />
                 </div>
                 Published Tours
               </CardTitle>
             </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{publishedTours}</div>
-              <p className="text-xs text-muted-foreground">Demos live and shareable</p>
+            <CardContent className="pt-2">
+              <div className="h-8 text-3xl font-bold">{publishedTours}</div>
+              <p className="h-3 text-xs text-muted-foreground">Demos live and shareable</p>
             </CardContent>
           </Card>
 
           <Card>
-            <CardHeader className="pb-3">
-              <CardTitle className="text-sm font-medium flex items-center gap-2">
+            <CardHeader className="pb-2">
+              <CardTitle className="h-4 text-sm font-medium flex items-center gap-2">
                 <div className="p-2 bg-orange-500/10 rounded-lg">
                   <Clock className="w-4 h-4 text-orange-500" />
                 </div>
                 Draft Tours
               </CardTitle>
             </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{draftTours}</div>
-              <p className="text-xs text-muted-foreground">Demos in progress</p>
+            <CardContent className="pt-2">
+              <div className="h-8 text-3xl font-bold">{draftTours}</div>
+              <p className="h-3 text-xs text-muted-foreground">Demos in progress</p>
             </CardContent>
           </Card>
         </div>
       </motion.div>
 
+      <Separator />
       {/* Recent Tours */}
       <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }}>
-        <Card>
-          <CardHeader>
-            <div className="flex items-center justify-between">
-              <div>
-                <CardTitle className="flex items-center gap-2">
-                  <Users className="w-5 h-5" />
-                  Your Product Tours
-                </CardTitle>
-                <CardDescription>Recently updated tours</CardDescription>
-              </div>
-              <Button variant="outline" onClick={handleViewAllTours}>
-                View All Tours
-              </Button>
-            </div>
-          </CardHeader>
-          <CardContent>
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <Folders className="w-5 h-5" />
+            <h2 className="text-xl font-semibold">Your Tours</h2>
+          </div>
+          <Button variant="outline" className="gap-2" onClick={handleViewAllTours}>
+            <EyeIcon className="w-5 h-5" />
+            <span className="hidden sm:inline">View All Tours</span>
+          </Button>
+
+        </div>
+        <Card className="bg-transparent border-none">
+          <CardContent className="px-0">
             {recentTours.length === 0 ? (
-              <div className="text-center py-8">
+              <div className="text-center py-">
                 <p className="text-muted-foreground mb-4">No tours created yet. Click "New Tour" to start!</p>
                 <Button onClick={handleCreateTour} className="gap-2">
                   <Plus className="w-4 h-4" />
@@ -244,29 +244,29 @@ export default function DashboardOverview() {
                 <table className="min-w-full bg-background border border-border rounded-md overflow-hidden">
                   <thead>
                     <tr className="bg-muted/50">
-                      <th className="py-3 px-4 border-b border-border text-left text-sm font-medium text-muted-foreground">Title</th>
-                      <th className="py-3 px-4 border-b border-border text-left text-sm font-medium text-muted-foreground">Status</th>
-                      <th className="py-3 px-4 border-b border-border text-left text-sm font-medium text-muted-foreground">Description</th>
-                      <th className="py-3 px-4 border-b border-border text-left text-sm font-medium text-muted-foreground">Updated</th>
-                      <th className="py-3 px-4 border-b border-border text-left text-sm font-medium text-muted-foreground">Steps</th>
-                      <th className="py-3 px-4 border-b border-border text-left text-sm font-medium text-muted-foreground">Views</th>
+                      <th className="py-2 px-3 text-left text-sm font-medium text-muted-foreground">Title</th>
+                      <th className="py-2 px-3 text-left text-sm font-medium text-muted-foreground">Status</th>
+                      <th className="py-2 px-3 text-left text-sm font-medium text-muted-foreground">Description</th>
+                      <th className="py-2 px-3 text-left text-sm font-medium text-muted-foreground">Updated</th>
+                      <th className="py-2 px-3 text-left text-sm font-medium text-muted-foreground">Steps</th>
+                      <th className="py-2 px-3 text-left text-sm font-medium text-muted-foreground">Views</th>
                     </tr>
                   </thead>
                   <tbody>
                     {recentTours.map((tour, index) => (
                       <tr key={tour.id} className="border-b border-border hover:bg-muted/20 last:border-b-0">
-                        <td className="py-2 px-4 text-foreground font-medium">{tour.title}</td>
-                        <td className="py-2 px-4">
+                        <td className="py-2 px-3 text-foreground font-medium">{tour.title}</td>
+                        <td className="py-2 px-3">
                           <Badge variant="outline" className={getStatusColor(tour.status)}>
                             {tour.status}
                           </Badge>
                         </td>
-                        <td className="py-2 px-4 text-muted-foreground text-sm truncate max-w-[200px]">
+                        <td className="py-2 px-3 text-muted-foreground text-sm truncate max-w-[150px] sm:max-w-[200px]">
                           {tour.description || "No description"}
                         </td>
-                        <td className="py-2 px-4 text-muted-foreground text-sm">{formatDate(tour.updatedAt)}</td>
-                        <td className="py-2 px-4 text-muted-foreground text-sm">{tour.stepCount || 'N/A'}</td>
-                        <td className="py-2 px-4 text-muted-foreground text-sm">{tour.viewCount || 'N/A'}</td>
+                        <td className="py-2 px-3 text-muted-foreground text-sm">{formatDate(tour.updatedAt)}</td>
+                        <td className="py-2 px-3 text-muted-foreground text-sm">{tour.stepCount || 'N/A'}</td>
+                        <td className="py-2 px-3 text-muted-foreground text-sm">{tour.viewCount || 'N/A'}</td>
                       </tr>
                     ))}
                   </tbody>

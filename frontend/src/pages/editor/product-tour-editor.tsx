@@ -8,11 +8,11 @@ import ResourceUploader from "@/components/resource-uploader"
 import TourStepManager from "./tour-step-manager"
 import TourPreview from "./tour-preview"
 import AnnotationTool from "./annotation-tool"
-import PublishControls from "./publish-controls" // Import PublishControls
+import PublishControls from "./publish-controls"
 import { useUser } from "@stackframe/react"
 import { Label } from "@/components/ui/label"
 import { Button } from "@/components/ui/button"
-import { useSearchParams } from "react-router-dom"
+import { Navigate, useNavigate, useSearchParams } from "react-router-dom"
 import { Textarea } from "@/components/ui/textarea"
 import { motion, AnimatePresence } from "motion/react"
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
@@ -21,13 +21,9 @@ import { arrayMove } from "@dnd-kit/sortable"
 import { Separator } from "@/components/ui/separator"
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { ResizableHandle, ResizablePanel, ResizablePanelGroup } from "@/components/ui/resizable"
-import { 
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle
-} from "@/components/ui/dialog" // Import Dialog components
+import { useIsMobile } from "@/hooks/use-mobile"
+import { Monitor, Ban, MonitorCheck, MonitorSmartphone, ArrowLeft } from "lucide-react" 
+import { LineShadowText } from "@/components/ui/line-shadow-text"
 
 export interface Annotation {
   id?: string
@@ -59,6 +55,8 @@ const ProductTourEditor: React.FC = () => {
   const [searchParams] = useSearchParams()
   const urlTourId = searchParams.get("tourId")
   const queryClient = useQueryClient()
+  const isMobile = useIsMobile()
+  const navigate = useNavigate()
 
   const [tourId, setTourId] = useState<string | null>(null)
   const [tourTitle, setTourTitle] = useState<string>("")
@@ -67,7 +65,7 @@ const ProductTourEditor: React.FC = () => {
   const [selectedStepIndex, setSelectedStepIndex] = useState<number>(0)
   const [direction, setDirection] = useState(0)
   const [tourCurrentStatus, setTourCurrentStatus] = useState<"draft" | "published" | "private">("draft")
-  const [isPublishControlsOpen, setIsPublishControlsOpen] = useState(false) // New state for PublishControls dialog
+  const [isPublishControlsOpen, setIsPublishControlsOpen] = useState(false)
 
   const {
     data: fetchedTour,
@@ -384,6 +382,24 @@ const ProductTourEditor: React.FC = () => {
     )
   }
 
+  if (isMobile) {
+    return (
+      <div className="h-screen flex flex-col items-center justify-center bg-background text-foreground p-4">
+      <div className="flex items-center text-3xl font-bold text-primary mb-6">
+        <h1 className="text-2xl font-bold text-primary"><LineShadowText className="italic">Tourify's</LineShadowText> Tour Editor</h1>
+      </div>
+      <div className="bg-card text-card-foreground p-8 rounded-lg shadow-lg max-w-sm text-center border border-border">
+        <MonitorSmartphone className="w-12 h-12 text-warning mx-auto mb-4" />
+        <p className="text-muted-foreground pb-3">
+          The Tourify editor is designed for larger screens. Please switch to a desktop computer or a tablet for the best experience.
+        </p>
+        
+        <Button onClick={() => navigate('/dashboard') } className=""><ArrowLeft /> Back To Dashboard</Button>
+      </div>
+    </div>
+    );
+  }
+
   return (
     <div className="h-screen flex flex-col bg-background text-sm">
       {/* Header */}
@@ -393,9 +409,9 @@ const ProductTourEditor: React.FC = () => {
         onSave={handleSaveTour}
         isSaving={saveTourMutation.isPending}
         onShareClick={() => {
-          console.log("Share button in EditorHeader clicked!"); // <-- Added/Confirmed this log
+          console.log("Share button in EditorHeader clicked!");
           setIsPublishControlsOpen(true);
-        }} // Open dialog on share button click
+        }}
       />
 
       {/* Tour Details - Compact Header */}
@@ -506,7 +522,7 @@ const ProductTourEditor: React.FC = () => {
                   </Button>
                 </div>
               </div>
-            </div> {/* <-- Added the missing closing div here */} 
+            </div>
           </ResizablePanel>
 
           <ResizableHandle />
@@ -566,22 +582,14 @@ const ProductTourEditor: React.FC = () => {
           </ResizablePanelGroup>
         </div>
 
-      {/* Publish Controls Dialog - Correctly placed as an overlay */}
-      <Dialog open={isPublishControlsOpen} onOpenChange={setIsPublishControlsOpen}>
-        <DialogContent className="sm:max-w-[500px]">
-          {/* <DialogHeader>
-            <DialogTitle>Publish & Share Tour</DialogTitle>
-            <DialogDescription>
-              Control your tour's visibility and get shareable links.
-            </DialogDescription>
-          </DialogHeader> */}
-          <PublishControls 
-            tourId={tourId}
-            initialStatus={tourCurrentStatus}
-            onStatusChange={handleUpdateTourStatus}
-          />
-        </DialogContent>
-      </Dialog>
+      {/* Publish Controls Dialog - Now a self-contained component */}
+      <PublishControls 
+        tourId={tourId}
+        initialStatus={tourCurrentStatus}
+        onStatusChange={handleUpdateTourStatus}
+        open={isPublishControlsOpen}
+        onOpenChange={setIsPublishControlsOpen}
+      />
     </div>
   )
 }

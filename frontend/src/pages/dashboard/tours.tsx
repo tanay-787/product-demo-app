@@ -11,9 +11,10 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
 import { useUser } from "@stackframe/react"
 import { useNavigate } from "react-router-dom"
 import api from "@/lib/api"
-import { Plus, Search, Filter, Eye, Edit, Share2, Trash2, MoreHorizontal, Calendar, Copy } from "lucide-react"
+import { Plus, Search, Filter, Eye, Edit, Share2, Trash2, MoreHorizontal, Calendar } from "lucide-react"
 import { motion } from "motion/react"
 import { cn } from "@/lib/utils"
+import PublishControls from "../editor/publish-controls" // Import PublishControls
 
 interface Tour {
   id: string
@@ -35,9 +36,12 @@ export default function ToursPage() {
   const [searchQuery, setSearchQuery] = useState("")
   const [statusFilter, setStatusFilter] = useState<string>("all")
   const [sortBy, setSortBy] = useState<string>("updated")
+  const [isPublishControlsOpen, setIsPublishControlsOpen] = useState(false)
+  const [selectedTourId, setSelectedTourId] = useState<string | null>(null)
+  const [selectedTourStatus, setSelectedTourStatus] = useState<"draft" | "published" | "private">("draft")
 
   const { data: tours = [], isLoading } = useQuery<Tour[]>({
-    queryKey: ["tours"],
+    queryKey: ["tours"] as const,
     queryFn: async () => {
       if (!user) return []
       const authHeaders = await user.getAuthHeaders()
@@ -54,6 +58,18 @@ export default function ToursPage() {
       await api.delete(`/tours/${tourId}`, { headers: authHeaders })
     },
     onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["tours"] })
+    },
+  })
+
+  const updateTourStatusMutation = useMutation<void, Error, { tourId: string; status: "draft" | "published" | "private" }>({
+    mutationFn: async ({ tourId, status }) => {
+      if (!user) throw new Error("User not authenticated")
+      const authHeaders = await user.getAuthHeaders()
+      await api.patch(`/tours/${tourId}/status`, { status }, { headers: authHeaders })
+    },
+    onSuccess: (_, variables) => {
+      queryClient.invalidateQueries({ queryKey: ["tour", variables.tourId] })
       queryClient.invalidateQueries({ queryKey: ["tours"] })
     },
   })
@@ -88,41 +104,23 @@ export default function ToursPage() {
     navigate(`/editor?tourId=${tourId}`)
   }
 
-  const handleViewTour = (tourId: string) => {
-    navigate(`/viewer/${tourId}`)
-  }
-
   const handleDeleteTour = (tourId: string, tourTitle: string) => {
     if (window.confirm(`Are you sure you want to delete "${tourTitle}"? This action cannot be undone.`)) {
       deleteTourMutation.mutate(tourId)
     }
   }
 
-  const handleCopyShareLink = async (tourId: string) => {
-    if (!user) {
-      alert("User not authenticated to share tour.")
-      return
-    }
-
-    try {
-      console.log(`Attempting to get share link for tour ID: ${tourId}`); // Debug log
-      const authHeaders = await user.getAuthHeaders()
-      const response = await api.get<{ shareId: string; isPublic: boolean; shareUrl: string }>(`/tours/${tourId}/share`, { headers: authHeaders })
-      const shareUrl = response.data.shareUrl
-      
-      console.log(`Received share URL: ${shareUrl}`); // Debug log
-      await navigator.clipboard.writeText(shareUrl)
-      alert("Share link copied to clipboard!")
-    } catch (error) {
-      console.error("Failed to get share link:", error)
-      alert("Failed to get share link. Please try again.")
-    }
+  const handleOpenPublishControls = (tourId: string, status: "draft" | "published" | "private") => {
+    setSelectedTourId(tourId)
+    setSelectedTourStatus(status)
+    setIsPublishControlsOpen(true)
   }
 
-  // New function to open PublishControls by navigating to editor
-  const handleOpenPublishControls = (tourId: string) => {
-    navigate(`/editor?tourId=${tourId}`);
-  };
+  const handleStatusChange = (newStatus: "draft" | "published" | "private") => {
+    if (selectedTourId) {
+      updateTourStatusMutation.mutate({ tourId: selectedTourId, status: newStatus })
+    }
+  }
 
   const getStatusColor = (status: string) => {
     switch (status) {
@@ -285,7 +283,7 @@ export default function ToursPage() {
                           </Button>
                         </DropdownMenuTrigger>
                         <DropdownMenuContent align="end">
-                          <DropdownMenuItem onClick={() => handleViewTour(tour.id)}>
+                          <DropdownMenuItem onClick={() => navigate(`/viewer/${tour.id}`)}>
                             <Eye className="w-4 h-4 mr-2" />
                             View Tour
                           </DropdownMenuItem>
@@ -293,10 +291,10 @@ export default function ToursPage() {
                             <Edit className="w-4 h-4 mr-2" />
                             Edit Tour
                           </DropdownMenuItem>
-                          {/* <DropdownMenuItem onClick={() => handleCopyShareLink(tour.id)}>
-                            <Copy className="w-4 h-4 mr-2" />
-                            Copy Link
-                          </DropdownMenuItem> */}
+                          <DropdownMenuItem onClick={() => handleOpenPublishControls(tour.id, tour.status)}>
+                            <Share2 className="w-4 h-4 mr-2" />
+                            Share Controls
+                          </DropdownMenuItem>
                           <DropdownMenuItem
                             onClick={() => handleDeleteTour(tour.id, tour.title)}
                             className="text-destructive focus:text-destructive"
@@ -325,21 +323,6 @@ export default function ToursPage() {
                         </div>
                       )}
                     </div>
-
-                    <div className="flex items-center gap-2 pt-2">
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => handleEditTour(tour.id)}
-                        className="flex-1 gap-1"
-                      >
-                        <Edit className="w-3 h-3" />
-                        Edit
-                      </Button>
-                      {/* <Button variant="outline" size="sm" onClick={() => handleOpenPublishControls(tour.id)} className="gap-1">
-                        <Share2 className="w-3 h-3" />
-                      </Button> */}
-                    </div>
                   </CardContent>
                 </Card>
               </motion.div>
@@ -347,6 +330,14 @@ export default function ToursPage() {
           </div>
         )}
       </motion.div>
+
+      <PublishControls
+        tourId={selectedTourId}
+        initialStatus={selectedTourStatus}
+        onStatusChange={handleStatusChange}
+        open={isPublishControlsOpen}
+        onOpenChange={setIsPublishControlsOpen}
+      />
     </div>
   )
 }
