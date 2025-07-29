@@ -1,13 +1,16 @@
 {
-    "rewrites": [
+  "rewrites": [
+    {
+      "source": "/api/(.*)",
+      "destination": "/api/index.js"
+    },
+    {
+      "source": "/handler/(.*)",
+      "destination": "/frontend/dist/index.html"
+    }, 
       {
-        "source": "/api/(.*)",
-        "destination": "/api/index.js" 
-      },
-      {
-        "source": "/(.*)",
-        "destination": "/frontend/dist/index.html" 
-      }
-    ]
-  }
-  
+      "source": "/(.*)",
+      "destination": "/frontend/dist/index.html"
+    }
+  ]
+}
