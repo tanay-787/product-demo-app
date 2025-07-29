@@ -56,63 +56,6 @@ This project is organized as a monorepo, containing two main directories:
 *   `frontend/`: Contains the React.js application for the user interface.
 *   `backend/`: Contains the Node.js Express.js application for the API and database interactions.
 
-## Setup and Running Locally
-
-To get the Tourify application running on your local machine, follow these steps:
-
-### 1. Clone the Repository
-
-```bash
-git clone <your-repository-url>
-cd tourify
-```
-
-### 2. Backend Setup
-
-Navigate to the `backend` directory and set up the environment:
-
-```bash
-cd backend
-pnpm install
-```
-
-Create a `.env` file in the `backend/` directory and add your database and authentication URLs:
-
-```
-DATABASE_URL="your_neon_postgres_database_url"
-JWKS_URL="your_neon_authorize_jwks_url"
-# PORT=3000 # Optional: Specify a port if needed
-```
-
-Run database migrations to set up the schema:
-
-```bash
-pnpm run db:generate
-pnpm run db:migrate
-```
-
-Start the backend server:
-
-```bash
-pnpm run dev
-```
-The backend will typically run on `http://localhost:3000`.
-
-### 3. Frontend Setup
-
-Open a new terminal, navigate to the `frontend` directory, and install dependencies:
-
-```bash
-cd ../frontend
-pnpm install
-```
-
-Start the frontend development server:
-
-```bash
-pnpm dev
-```
-The frontend application will typically be available at `http://localhost:5173`.
 
 ## API Endpoints (High-Level)
 

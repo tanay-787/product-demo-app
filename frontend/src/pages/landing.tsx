@@ -2,7 +2,7 @@
 
 import type React from "react"
 import { useRef } from "react"
-import { useNavigate } from "react-router-dom"
+import { useNavigate, Link } from "react-router-dom"
 import { useUser } from "@stackframe/react"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
@@ -364,18 +364,18 @@ const LandingPage: React.FC = () => {
           </div>
           <p className="text-muted-foreground mb-8">Where every product becomes a story worth telling.</p>
           <div className="flex justify-center space-x-8 text-muted-foreground">
-            <a href="#" className="hover:text-foreground transition-colors">
+            <Link to="#" className="hover:text-foreground transition-colors">
               Privacy
-            </a>
-            <a href="#" className="hover:text-foreground transition-colors">
+            </Link>
+            <Link to="#" className="hover:text-foreground transition-colors">
               Terms
-            </a>
-            <a href="#" className="hover:text-foreground transition-colors">
+            </Link>
+            <Link to="#" className="hover:text-foreground transition-colors">
               Support
-            </a>
-            <a href="#" className="hover:text-foreground transition-colors">
+            </Link>
+            <Link to="#" className="hover:text-foreground transition-colors">
               Contact
-            </a>
+            </Link>
           </div>
         </div>
       </footer>

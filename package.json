@@ -1,0 +1,10 @@
+{
+    "name": "tourify-root",
+    "version": "0.1.0",
+    "private": true,
+    "scripts": {
+      "install-deps": "pnpm install --recursive",
+      "build": "cd backend && pnpm run deploy:build && cd ../frontend && pnpm run build"
+    }
+  }
+  

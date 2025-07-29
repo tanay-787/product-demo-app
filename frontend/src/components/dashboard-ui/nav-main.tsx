@@ -1,6 +1,7 @@
 "use client"
 
 import { ChevronRight, Plus, type LucideIcon } from "lucide-react"
+import { Link } from "react-router-dom"
 
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible"
 import {
@@ -39,18 +40,18 @@ export function NavMain({
           <Collapsible key={item.title} asChild open defaultOpen={item.isActive}>
             <SidebarMenuItem>
               <SidebarMenuButton asChild tooltip={item.title}>
-                <a href={item.url}>
+                <Link to={item.url}>
                   <item.icon />
                   <span>{item.title}</span>
-                </a>
+                </Link>
               </SidebarMenuButton>
               {item.items?.length ? (
                 <>
                   {/* <CollapsibleTrigger asChild> */}
                   <SidebarMenuAction title={`New ${item.title}`} asChild>
-                  <a href="/builder-shell">
+                  <Link to="/builder-shell">
                     <Plus /> <span className="sr-only">New {item.title}</span>
-                    </a>
+                    </Link>
                   </SidebarMenuAction>
                   {/* </CollapsibleTrigger> */}
                   <CollapsibleContent>
@@ -58,10 +59,10 @@ export function NavMain({
                       {item.items?.map((subItem) => (
                         <SidebarMenuSubItem key={subItem.title}>
                           <SidebarMenuSubButton asChild>
-                            <a href={subItem.url}>
+                            <Link to={subItem.url}>
                               <subItem.icon />
                               <span>{subItem.title}</span>
-                            </a>
+                            </Link>
                           </SidebarMenuSubButton>
                         </SidebarMenuSubItem>
                       ))}
