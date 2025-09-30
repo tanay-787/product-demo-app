@@ -1,5 +1,2 @@
-
-export default async (req, res) => {
-    const { default: app } = await import('../backend/dist/index.js');
-    app(req, res); // Call the imported app
-  };
+import app from "../backend/dist/index.js"; // path to compiled JS
+export default app;

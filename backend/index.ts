@@ -1,44 +1,37 @@
-import express,{ Application, Request, Response, NextFunction} from "express"
-import cors from "cors"
-import { authMiddleware } from "./middleware/auth"
-import toursRouter from "./routes/tours"
-import publicToursRouter from "./routes/publicTours"
-import analyticsRouter from "./routes/analytics"
-import insightsRouter from "./routes/insights"
-import mediaRouter from "./routes/media"
+// backend/src/index.ts  (or backend/index.ts if that is your source)
+import express, { Application, Request, Response } from "express";
+import cors from "cors";
+import { authMiddleware } from "./middleware/auth";
+import toursRouter from "./routes/tours";
+import publicToursRouter from "./routes/publicTours";
+import analyticsRouter from "./routes/analytics";
+import insightsRouter from "./routes/insights";
+import mediaRouter from "./routes/media";
 
-const app: Application = express()
-const PORT = process.env.PORT || 3000
+const app: Application = express();
 
 // Middleware
-app.use(cors())
-app.use(express.json())
+app.use(cors());
+app.use(express.json());
 
-// 1. All API Routes (MUST come before serving static files or fallback)
-app.use("/api/tours", authMiddleware, toursRouter)
-app.use("/api/view", publicToursRouter) // Public routes for viewing tours
-app.use("/api/analytics", analyticsRouter)
-app.use("/api/insights", authMiddleware, insightsRouter)
-app.use("/api/media", authMiddleware, mediaRouter)
+// API routes (must come BEFORE any static fallback if you ever serve them here)
+app.use("/api/tours", authMiddleware, toursRouter);
+app.use("/api/view", publicToursRouter);
+app.use("/api/analytics", analyticsRouter);
+app.use("/api/insights", authMiddleware, insightsRouter);
+app.use("/api/media", authMiddleware, mediaRouter);
 
-// Health check
+// health
 app.get("/api/health", (req: Request, res: Response) => {
-  res.json({ status: "OK", timestamp: new Date().toISOString() })
-})
+  res.json({ status: "OK", timestamp: new Date().toISOString() });
+});
 
+// error handler
+app.use((err: any, req: Request, res: Response, next: any) => {
+  console.error("Error:", err);
+  res.status(500).json({ error: "Internal server error", message: err?.message });
+});
 
-
-// Error handling middleware
-app.use((err: any, req: Request, res: Response, next: express.NextFunction) => {
-  console.error("Error:", err)
-  res.status(500).json({
-    error: "Internal server error",
-    message: err.message,
-  })
-})
-
-app.listen(PORT, () => {
-  console.log(`Server running on port ${PORT}`)
-})
-
+// IMPORTANT: DO NOT call `app.listen()` here in the file that will be exported to Vercel.
+// Export the app for Vercel to use as a function
 export default app;

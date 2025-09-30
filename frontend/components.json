@@ -17,5 +17,10 @@
     "lib": "@/lib",
     "hooks": "@/hooks"
   },
-  "iconLibrary": "lucide"
+  "iconLibrary": "lucide",
+  "registries": {
+    "@acme": "https://acme.com/r/{name}.json",
+    "@animate-ui": "https://animate-ui.com/r/{name}.json",
+    "@magicui": "https://magicui.design/r/{name}.json"
+  }
 }
